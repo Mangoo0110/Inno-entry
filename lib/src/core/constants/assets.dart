@@ -4,9 +4,8 @@ class Assets {
   // static const String appLogo = 'assets/logo/logo.png';
 
   // ----------- images -----------
-  static const String _imageAssets = 'assets/image';
-  static const String spinach = '$_imageAssets/spinach.png';
+  // static const String _imageAssets = 'assets/image';
 
-  // ----------- icons -----------
-  static const String _iconAssets = 'assets/icon';
+  // // ----------- icons -----------
+  // static const String _iconAssets = 'assets/icon';
 }
