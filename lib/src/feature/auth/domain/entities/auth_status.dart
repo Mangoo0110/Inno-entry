@@ -7,4 +7,6 @@ class Authenticated extends AuthStatus {
   Authenticated(this.account);
 }
 
-class Unauthenticated extends AuthStatus {}
+class UnAuthenticated extends AuthStatus {}
+
+class LoadingAuthSignature extends AuthStatus {}

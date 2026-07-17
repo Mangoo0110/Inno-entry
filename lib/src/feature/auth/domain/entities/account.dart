@@ -1,4 +1,6 @@
 abstract class Account {
+  const Account();
+
   String get uniqueName;
 
   /// [optional]
