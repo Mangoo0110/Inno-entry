@@ -8,6 +8,8 @@ import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_par
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
 
+import '../entities/entry_brief.dart';
+
 abstract interface class EntryRepo {
 
   AsyncRequest<Entry> addNewEntry({required NewEntryParams params});
@@ -20,5 +22,5 @@ abstract interface class EntryRepo {
 
   AsyncRequest<Entry> getEntryDetails({required GetEntryDetailsParams params});
 
-  AsyncRequest<List<Entry>> getEntries({required GetEntriesParams params});
+  AsyncRequest<List<EntryBrief>> getEntries({required GetEntriesParams params});
 }

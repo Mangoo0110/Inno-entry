@@ -1,7 +1,7 @@
 import '../entities/entry_uid.dart';
 
 class UpdateEntryParams {
-  final EntryUid uId;
+  final EntryUid id;
   /// Unique account signature e.g, account name, uid
   final String owner;
   final String? title;
@@ -12,7 +12,7 @@ class UpdateEntryParams {
   final String? photoPath;
 
   UpdateEntryParams({
-    required this.uId,
+    required this.id,
     required this.owner,
     this.title,
     this.note,
@@ -24,7 +24,7 @@ class UpdateEntryParams {
 }
 
 class MarkDoneParam extends UpdateEntryParams {
-  MarkDoneParam({required super.uId, required super.owner}): super(done: true);
+  MarkDoneParam({required super.id, required super.owner}): super(done: true);
 }
 
 

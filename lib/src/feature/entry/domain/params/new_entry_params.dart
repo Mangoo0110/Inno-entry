@@ -1,7 +1,5 @@
-import '../entities/entry_uid.dart';
 
 class NewEntryParams {
-  final EntryUid uId;
   /// Unique account signature e.g, account name, uid
   final String owner;
   final String title;
@@ -12,7 +10,6 @@ class NewEntryParams {
   final String? photoPath;
 
   NewEntryParams({
-    required this.uId,
     required this.owner,
     required this.title,
     required this.note,
