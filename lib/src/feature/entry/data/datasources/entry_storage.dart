@@ -11,8 +11,12 @@ import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.d
 import 'package:sqflite/sqflite.dart';
 
 base class EntryStorage implements EntryLocalDatasource {
-  static const _databaseName = 'inno_entry.db';
+  // Makes mocking easier and does not affect the real db
+  EntryStorage({this.databaseName = 'inno_entry.db'});
+
   static const _databaseVersion = 1;
+
+  final String databaseName;
 
   Database? _database;
 
@@ -21,7 +25,7 @@ base class EntryStorage implements EntryLocalDatasource {
     if (_database != null) return;
 
     final databasesPath = await getDatabasesPath();
-    final path = _joinPath(databasesPath, _databaseName);
+    final path = _joinPath(databasesPath, databaseName);
 
     _database = await openDatabase(
       path,
