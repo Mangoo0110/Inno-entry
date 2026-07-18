@@ -176,7 +176,8 @@ class AppButtonStyles {
         if (_isProcessing(visualState)) {
           return colors.primaryColor.withAlpha(170);
         }
-        return colors.iconColor;
+        if (states.contains(WidgetState.selected)) return colors.primaryColor;
+        return colors.textColor;
       }),
       overlayColor: WidgetStateProperty.resolveWith((states) {
         if (_isInactive(states, visualState)) return Colors.transparent;
@@ -194,11 +195,11 @@ class AppButtonStyles {
       padding: const WidgetStatePropertyAll(
         EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       ),
-      shape: const WidgetStatePropertyAll(
-        RoundedRectangleBorder(borderRadius: AppSizes.rectangleButtonRadius),
+      shape: WidgetStatePropertyAll(
+        RoundedRectangleBorder(borderRadius: AppSizes.maxCircularRadius),
       ),
       textStyle: const WidgetStatePropertyAll(
-        TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+        TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
       ),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.standard,
