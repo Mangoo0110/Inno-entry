@@ -11,6 +11,7 @@ import 'package:inno_entry/src/feature/entry/data/datasources/interface/entry_da
 import 'package:inno_entry/src/feature/entry/data/repo/entry_repo_impl.dart';
 import 'package:inno_entry/src/feature/entry/domain/repo/entry_repo.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/entry_usecases.dart';
+import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_detail_bloc.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_form_bloc.dart';
 
@@ -130,6 +131,16 @@ Future<void> configureDependencies({
             addNewEntry: serviceLocator(),
             updateEntry: serviceLocator(),
           )..add(const EntryFormStarted()),
+        );
+  }
+  if (!serviceLocator.isRegistered<EntryDetailBloc>()) {
+    serviceLocator
+        .registerFactoryParam<EntryDetailBloc, EntryDetailBlocParams, void>(
+          (params, _) => EntryDetailBloc(
+            params: params,
+            getEntryDetails: serviceLocator(),
+            deleteEntry: serviceLocator(),
+          )..add(const EntryDetailStarted()),
         );
   }
 }

@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
+import 'package:inno_entry/src/feature/entry/presentation/widgets/entry_delete_button.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_category_icon.dart';
 
 class EntryFeedTile extends StatelessWidget {
@@ -118,12 +119,13 @@ class _EntryFeedTileBody extends StatelessWidget {
             height: 1.1,
           ),
         ),
-        if(note.isNotEmpty)Text(
-          note,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: theme.bodySmall?.copyWith(color: colors.grey, height: 1.2),
-        ),
+        if (note.isNotEmpty)
+          Text(
+            note,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.bodySmall?.copyWith(color: colors.grey, height: 1.2),
+          ),
         _EntryStatusPill(label: tagLabel),
       ],
     );
@@ -195,13 +197,7 @@ class _EntryFeedTileAction extends StatelessWidget {
               ),
             ),
           ),
-        IconButton(
-          tooltip: 'Delete entry',
-          visualDensity: VisualDensity.compact,
-          onPressed: onDelete,
-          color: mutedColor,
-          icon: const Icon(Icons.delete_outline_rounded, size: 20),
-        ),
+        EntryDeleteButton(onPressed: onDelete, color: mutedColor),
       ],
     );
   }
