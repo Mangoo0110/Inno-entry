@@ -10,6 +10,8 @@ import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/w
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_filtering_bar.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_home_header.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_search_field.dart';
+import 'package:inno_entry/src/feature/entry/presentation/widgets/entry_delete_button.dart';
+import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_result.dart';
 
 typedef _HeaderSelection = ({
   String accountName,
@@ -45,7 +47,7 @@ class UserDashboardView extends StatelessWidget {
   final Future<void> Function() onLogoutPressed;
   final Future<bool> Function() onDeleteAccountPressed;
   final Future<bool?> Function() onAddEntryPressed;
-  final Future<bool?> Function(EntryBrief entry) onEntryPressed;
+  final Future<EntryDetailResult?> Function(EntryBrief entry) onEntryPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +78,7 @@ class _UserDashboardContent extends StatefulWidget {
   final Future<void> Function() onLogoutPressed;
   final Future<bool> Function() onDeleteAccountPressed;
   final Future<bool?> Function() onAddEntryPressed;
-  final Future<bool?> Function(EntryBrief entry) onEntryPressed;
+  final Future<EntryDetailResult?> Function(EntryBrief entry) onEntryPressed;
 
   @override
   State<_UserDashboardContent> createState() => _UserDashboardContentState();
@@ -118,9 +120,8 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
           return;
         }
         if (effect is EntryFeedDeletedEffect) {
-          _showEntrySnackBar(
+          showEntryDeletedSnackBar(
             context,
-            message: 'Entry deleted',
             actionLabel: 'UNDO',
             onActionPressed: () {
               context.read<EntryFeedBloc>().add(
@@ -187,11 +188,23 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 
   Future<void> _openEntry(EntryBrief entry) async {
     _closeAccountMenu();
-    final saved = await widget.onEntryPressed(entry);
-    if (!mounted || saved != true) return;
-    context.read<EntryFeedBloc>()
-      ..add(const EntryFeedStarted())
-      ..add(const EntryFeedSaveConfirmed());
+    final result = await widget.onEntryPressed(entry);
+    if (!mounted || result == null) return;
+
+    final bloc = context.read<EntryFeedBloc>()..add(const EntryFeedStarted());
+    if (result is EntryDetailSaved) {
+      bloc.add(const EntryFeedSaveConfirmed());
+    } else if (result is EntryDetailDeleted) {
+      showEntryDeletedSnackBar(
+        context,
+        actionLabel: 'UNDO',
+        onActionPressed: () {
+          context.read<EntryFeedBloc>().add(
+            EntryFeedEntryDeleteUndone(result.entry),
+          );
+        },
+      );
+    }
   }
 
   void _toggleAccountMenu() {

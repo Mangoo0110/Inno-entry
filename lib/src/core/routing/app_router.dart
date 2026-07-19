@@ -8,6 +8,8 @@ import 'package:inno_entry/src/core/routing/auth_route_gate.dart';
 import 'package:inno_entry/src/feature/auth/presentation/screens/auth_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/user_dashboard_view.dart';
+import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_result.dart';
+import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_view.dart';
 
@@ -46,8 +48,8 @@ GoRouter createAppRouter() {
                       return context.push<bool>(AppRoutes.entryForm);
                     },
                     onEntryPressed: (entry) {
-                      return context.push<bool>(
-                        '${AppRoutes.entryForm}?entryId=${entry.uId.uId}',
+                      return context.push<EntryDetailResult>(
+                        '${AppRoutes.entryDetail}?entryId=${entry.uId.uId}',
                       );
                     },
                     onLogoutPressed: () {
@@ -58,6 +60,30 @@ GoRouter createAppRouter() {
                           .read<AppAuthUiController>()
                           .deleteCurrentAccount();
                     },
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.entryDetail,
+        name: 'entry-detail',
+        pageBuilder: (context, state) {
+          return NoTransitionPage(
+            key: state.pageKey,
+            child: AuthRouteGate(
+              policy: AuthRoutePolicy.signedInOnly,
+              child: AuthenticatedAccountRoute(
+                builder: (context, accountName) {
+                  final entryId = int.tryParse(
+                    state.uri.queryParameters['entryId'] ?? '',
+                  );
+                  if (entryId == null) return const SizedBox.shrink();
+                  return EntryDetailScreen(
+                    accountName: accountName,
+                    entryId: entryId,
                   );
                 },
               ),
