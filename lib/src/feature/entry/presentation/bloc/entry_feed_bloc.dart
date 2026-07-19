@@ -264,7 +264,12 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
     EntryFeedNextPageRequested event,
     Emitter<EntryFeedState> emit,
   ) async {
-    if (state.isLoading || state.isPageLoading || state.hasReachedMax) return;
+    if (state.isLoading ||
+        state.isFiltering ||
+        state.isPageLoading ||
+        state.hasReachedMax) {
+      return;
+    }
 
     emit(state.copyWith(isPageLoading: true, clearError: true));
     await _loadEntries(emit, requestId: _requestId, append: true);
