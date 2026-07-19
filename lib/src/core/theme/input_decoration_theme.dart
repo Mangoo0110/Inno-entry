@@ -6,7 +6,7 @@ class DInputDecorationTheme {
   // Light InputDecorationTheme
   static InputDecorationTheme lightTheme = InputDecorationTheme(
     filled: true,
-    floatingLabelBehavior: FloatingLabelBehavior.never,
+    floatingLabelBehavior: FloatingLabelBehavior.always,
     prefixIconConstraints: const BoxConstraints(maxHeight: 40, maxWidth: 40),
     contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
     fillColor: AppColors.light().backgroundColor,
@@ -15,6 +15,7 @@ class DInputDecorationTheme {
     hintStyle: TextStyle(color: AppColors.light().hintColor),
     labelStyle: TextStyle(color: AppColors.light().labelColor),
     outlineBorder: BorderSide(color: AppColors.light().textColor),
+    floatingLabelStyle: TextStyle(color: AppColors.light().primaryColor),
     border: OutlineInputBorder(
       borderSide: BorderSide(color: AppColors.light().enabledBorderColor),
       borderRadius: AppSizes.textFieldBorderRadius,

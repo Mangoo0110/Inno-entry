@@ -34,7 +34,7 @@ class AppColors {
   static const Color _darkSecondaryContainerColor = Color(0xFF173233);
   static const Color _surfaceColor = Color(0xFFFAFCFB);
   static const Color _darkSurfaceColor = Color(0xFF071212);
-  static const Color _backgroundColor = Color(0xFFEAF3F1);
+  static const Color _backgroundColor = Color.fromARGB(255, 255, 255, 255);
   static const Color _errorColor = Color(0xFFBA1A1A);
   static const Color _splashColor = Color(0x2939AEB2);
   static const Color _hintBaseColor = Color(0xFF6E7F80);

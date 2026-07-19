@@ -27,7 +27,7 @@ class AppSizes {
 
   // Border Radius
   static const BorderRadius textFieldBorderRadius = BorderRadius.all(
-    Radius.circular(6.0),
+    Radius.circular(12.0),
   );
   static const BorderRadius rectangleButtonRadius = BorderRadius.all(
     Radius.circular(24.0),

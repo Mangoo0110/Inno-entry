@@ -148,7 +148,10 @@ base class AuthStorage implements AuthLocalDatasource {
   }
 
   @override
-  Stream<AuthStatus> get authStream => _authStreamController.stream;
+  Stream<AuthStatus> get authStream async* {
+    yield await currentAuthStatus();
+    yield* _authStreamController.stream;
+  }
 
   @override
   Future<AuthStatus> switchAccount({required String accountName}) async {
