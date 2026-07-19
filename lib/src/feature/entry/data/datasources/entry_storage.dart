@@ -7,6 +7,7 @@ import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.da
 import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -92,6 +93,35 @@ base class EntryStorage implements EntryLocalDatasource {
     if (deletedCount == 0) {
       throw Exception('No entry found to delete!');
     }
+  }
+
+  @override
+  Future<EntryModel> restoreDeletedEntry({
+    required RestoreDeletedEntryParams params,
+  }) async {
+    final entry = params.entry;
+    final entryModel = EntryModel(
+      uId: entry.uId,
+      owner: entry.owner,
+      title: entry.title,
+      note: entry.note,
+      amount: entry.amount,
+      category: entry.category,
+      done: entry.done,
+      photoPath: entry.photoPath,
+      createdAt: entry.createdAt,
+      updatedAt: entry.updatedAt,
+    );
+
+    await _getDataBase().insert(
+      EntryModelFields.tableName,
+      entryModel.toDb(),
+      conflictAlgorithm: ConflictAlgorithm.fail,
+    );
+
+    return getEntryDetails(
+      params: GetEntryDetailsParams(id: entry.uId, owner: entry.owner),
+    );
   }
 
   @override

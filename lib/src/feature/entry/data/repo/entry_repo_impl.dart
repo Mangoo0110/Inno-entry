@@ -10,6 +10,7 @@ import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.da
 import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/repo/entry_repo.dart';
 
@@ -55,6 +56,20 @@ base class EntryRepoImpl with ErrorHandler implements EntryRepo {
       tryFunc: () async {
         await entryLocalDatasource.deleteEntry(params: params);
         return const SuccessRepoCall(data: null);
+      },
+    );
+  }
+
+  @override
+  AsyncRequest<Entry> restoreDeletedEntry({
+    required RestoreDeletedEntryParams params,
+  }) {
+    return asyncTryCatch(
+      tryFunc: () async {
+        final entry = await entryLocalDatasource.restoreDeletedEntry(
+          params: params,
+        );
+        return SuccessRepoCall(data: entry);
       },
     );
   }
