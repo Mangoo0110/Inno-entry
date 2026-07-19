@@ -8,6 +8,8 @@ import 'package:inno_entry/src/core/routing/auth_route_gate.dart';
 import 'package:inno_entry/src/feature/auth/presentation/screens/auth_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/user_dashboard_view.dart';
+import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_screen.dart';
+import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_view.dart';
 
 GoRouter createAppRouter() {
   return GoRouter(
@@ -40,9 +42,43 @@ GoRouter createAppRouter() {
                     accountName: accountName,
                     createBloc: (accountName) =>
                         serviceLocator<EntryFeedBloc>(param1: accountName),
+                    onAddEntryPressed: () {
+                      return context.push<bool>(AppRoutes.entryForm);
+                    },
+                    onEntryPressed: (entry) {
+                      return context.push<bool>(
+                        '${AppRoutes.entryForm}?entryId=${entry.uId.uId}',
+                      );
+                    },
                     onAccountPressed: () {
                       context.read<AppAuthUiController>().logout();
                     },
+                  );
+                },
+              ),
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.entryForm,
+        name: 'entry-form',
+        pageBuilder: (context, state) {
+          return NoTransitionPage(
+            key: state.pageKey,
+            child: AuthRouteGate(
+              policy: AuthRoutePolicy.signedInOnly,
+              child: AuthenticatedAccountRoute(
+                builder: (context, accountName) {
+                  final entryId = int.tryParse(
+                    state.uri.queryParameters['entryId'] ?? '',
+                  );
+                  return EntryFormScreen(
+                    accountName: accountName,
+                    mode: entryId == null
+                        ? EntryFormMode.create
+                        : EntryFormMode.edit,
+                    entryId: entryId,
                   );
                 },
               ),

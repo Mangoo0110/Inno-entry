@@ -160,7 +160,9 @@ base class EntryStorage implements EntryLocalDatasource {
         if (params.category != null) EntryModelFields.category: params.category,
         if (params.note != null) EntryModelFields.note: params.note,
         if (params.amount != null) EntryModelFields.amount: params.amount,
-        if (params.photoPath != null)
+        if (params.clearPhotoPath)
+          EntryModelFields.photoPath: null
+        else if (params.photoPath != null)
           EntryModelFields.photoPath: params.photoPath,
         if (params.done != null) EntryModelFields.done: params.done! ? 1 : 0,
         EntryModelFields.updatedAt: DateTime.now().toUtc().toIso8601String(),

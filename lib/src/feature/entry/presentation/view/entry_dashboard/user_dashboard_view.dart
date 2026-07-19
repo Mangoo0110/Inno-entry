@@ -33,26 +33,40 @@ class UserDashboardView extends StatelessWidget {
     required this.accountName,
     required this.createBloc,
     required this.onAccountPressed,
+    required this.onAddEntryPressed,
+    required this.onEntryPressed,
   });
 
   final String accountName;
   final EntryFeedBloc Function(String accountName) createBloc;
   final VoidCallback onAccountPressed;
+  final Future<bool?> Function() onAddEntryPressed;
+  final Future<bool?> Function(EntryBrief entry) onEntryPressed;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       key: ValueKey(accountName),
       create: (_) => createBloc(accountName),
-      child: _UserDashboardContent(onAccountPressed: onAccountPressed),
+      child: _UserDashboardContent(
+        onAccountPressed: onAccountPressed,
+        onAddEntryPressed: onAddEntryPressed,
+        onEntryPressed: onEntryPressed,
+      ),
     );
   }
 }
 
 class _UserDashboardContent extends StatefulWidget {
-  const _UserDashboardContent({required this.onAccountPressed});
+  const _UserDashboardContent({
+    required this.onAccountPressed,
+    required this.onAddEntryPressed,
+    required this.onEntryPressed,
+  });
 
   final VoidCallback onAccountPressed;
+  final Future<bool?> Function() onAddEntryPressed;
+  final Future<bool?> Function(EntryBrief entry) onEntryPressed;
 
   @override
   State<_UserDashboardContent> createState() => _UserDashboardContentState();
@@ -97,15 +111,27 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
                   _DashboardSearch(searchController: _searchController),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
                   const _DashboardCategories(),
-                  const _DashboardFeed(),
+                  _DashboardFeed(onEntryPressed: _openEntry),
                 ],
               ),
-              const _DashboardAddButton(),
+              _DashboardAddButton(onPressed: _openAddEntry),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _openAddEntry() async {
+    final saved = await widget.onAddEntryPressed();
+    if (!mounted || saved != true) return;
+    context.read<EntryFeedBloc>().add(const EntryFeedStarted());
+  }
+
+  Future<void> _openEntry(EntryBrief entry) async {
+    final saved = await widget.onEntryPressed(entry);
+    if (!mounted || saved != true) return;
+    context.read<EntryFeedBloc>().add(const EntryFeedStarted());
   }
 }
 
@@ -190,7 +216,9 @@ class _DashboardCategories extends StatelessWidget {
 }
 
 class _DashboardFeed extends StatelessWidget {
-  const _DashboardFeed();
+  const _DashboardFeed({required this.onEntryPressed});
+
+  final Future<void> Function(EntryBrief entry) onEntryPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +258,7 @@ class _DashboardFeed extends StatelessWidget {
           entries: state.entries,
           isPageLoading: state.isPageLoading,
           hasReachedMax: state.hasReachedMax,
+          onEntryPressed: onEntryPressed,
           onLoadMore: () {
             context.read<EntryFeedBloc>().add(
               const EntryFeedNextPageRequested(),
@@ -242,7 +271,9 @@ class _DashboardFeed extends StatelessWidget {
 }
 
 class _DashboardAddButton extends StatelessWidget {
-  const _DashboardAddButton();
+  const _DashboardAddButton({required this.onPressed});
+
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -258,7 +289,7 @@ class _DashboardAddButton extends StatelessWidget {
           elevation: 6,
           backgroundColor: colors.primaryColor,
           foregroundColor: colors.activeButtonContentColor,
-          onPressed: () {},
+          onPressed: onPressed,
           child: const Icon(Icons.add_rounded, size: 24, weight: 2),
         ),
       ),

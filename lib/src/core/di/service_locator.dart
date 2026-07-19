@@ -12,6 +12,7 @@ import 'package:inno_entry/src/feature/entry/data/repo/entry_repo_impl.dart';
 import 'package:inno_entry/src/feature/entry/domain/repo/entry_repo.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/entry_usecases.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
+import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_form_bloc.dart';
 
 final serviceLocator = GetIt.instance;
 
@@ -21,53 +22,77 @@ Future<void> configureDependencies({
   bool reset = false,
 }) async {
   if (reset) await serviceLocator.reset(dispose: true);
-  if (serviceLocator.isRegistered<AuthLocalDatasource>()) return;
 
-  final resolvedAuthStorage = authStorage ?? AuthStorage();
-  await resolvedAuthStorage.init();
+  if (!serviceLocator.isRegistered<AuthLocalDatasource>()) {
+    final resolvedAuthStorage = authStorage ?? AuthStorage();
+    await resolvedAuthStorage.init();
+    serviceLocator.registerSingleton<AuthLocalDatasource>(resolvedAuthStorage);
+  }
 
-  final resolvedEntryStorage = entryStorage ?? EntryStorage();
-  await resolvedEntryStorage.init();
+  if (!serviceLocator.isRegistered<EntryLocalDatasource>()) {
+    final resolvedEntryStorage = entryStorage ?? EntryStorage();
+    await resolvedEntryStorage.init();
+    serviceLocator.registerSingleton<EntryLocalDatasource>(
+      resolvedEntryStorage,
+    );
+  }
 
-  serviceLocator.registerSingleton<AuthLocalDatasource>(resolvedAuthStorage);
-  serviceLocator.registerSingleton<EntryLocalDatasource>(resolvedEntryStorage);
+  if (!serviceLocator.isRegistered<AuthRepo>()) {
+    serviceLocator.registerLazySingleton<AuthRepo>(
+      () => AuthRepoImpl(authLocalDatasource: serviceLocator()),
+    );
+  }
+  if (!serviceLocator.isRegistered<EntryRepo>()) {
+    serviceLocator.registerLazySingleton<EntryRepo>(
+      () => EntryRepoImpl(entryLocalDatasource: serviceLocator()),
+    );
+  }
 
-  serviceLocator.registerLazySingleton<AuthRepo>(
-    () => AuthRepoImpl(authLocalDatasource: serviceLocator()),
+  _registerFactoryIfAbsent<WatchAuthStatus>(
+    () => WatchAuthStatus(serviceLocator()),
   );
-  serviceLocator.registerLazySingleton<EntryRepo>(
-    () => EntryRepoImpl(entryLocalDatasource: serviceLocator()),
-  );
-
-  serviceLocator.registerFactory(() => WatchAuthStatus(serviceLocator()));
-  serviceLocator.registerFactory(() => GetAccounts(serviceLocator()));
-  serviceLocator.registerFactory(
+  _registerFactoryIfAbsent<GetAccounts>(() => GetAccounts(serviceLocator()));
+  _registerFactoryIfAbsent<IsAccountNameAvailable>(
     () => IsAccountNameAvailable(serviceLocator()),
   );
-  serviceLocator.registerFactory(() => CreateAccount(serviceLocator()));
-  serviceLocator.registerFactory(() => UnlockAccount(serviceLocator()));
-  serviceLocator.registerFactory(() => Logout(serviceLocator()));
-  serviceLocator.registerFactory(() => DeleteCurrentAccount(serviceLocator()));
-  serviceLocator.registerFactory(
+  _registerFactoryIfAbsent<CreateAccount>(
+    () => CreateAccount(serviceLocator()),
+  );
+  _registerFactoryIfAbsent<UnlockAccount>(
+    () => UnlockAccount(serviceLocator()),
+  );
+  _registerFactoryIfAbsent<Logout>(() => Logout(serviceLocator()));
+  _registerFactoryIfAbsent<DeleteCurrentAccount>(
+    () => DeleteCurrentAccount(serviceLocator()),
+  );
+  _registerFactoryIfAbsent<LoginWithExistingAccount>(
     () => LoginWithExistingAccount(serviceLocator()),
   );
 
-  serviceLocator.registerFactory(() => GetEntries(serviceLocator()));
-  serviceLocator.registerFactory(() => GetEntryCategories(serviceLocator()));
-  serviceLocator.registerFactory(() => AddNewEntry(serviceLocator()));
-  serviceLocator.registerFactory(() => DeleteEntry(serviceLocator()));
-  serviceLocator.registerFactory(() => DeleteAllEntry(serviceLocator()));
-  serviceLocator.registerFactory(() => GetEntryDetails(serviceLocator()));
-  serviceLocator.registerFactory(() => MarkEntryDone(serviceLocator()));
-  serviceLocator.registerFactory(() => UpdateEntry(serviceLocator()));
+  _registerFactoryIfAbsent<GetEntries>(() => GetEntries(serviceLocator()));
+  _registerFactoryIfAbsent<GetEntryCategories>(
+    () => GetEntryCategories(serviceLocator()),
+  );
+  _registerFactoryIfAbsent<AddNewEntry>(() => AddNewEntry(serviceLocator()));
+  _registerFactoryIfAbsent<DeleteEntry>(() => DeleteEntry(serviceLocator()));
+  _registerFactoryIfAbsent<DeleteAllEntry>(
+    () => DeleteAllEntry(serviceLocator()),
+  );
+  _registerFactoryIfAbsent<GetEntryDetails>(
+    () => GetEntryDetails(serviceLocator()),
+  );
+  _registerFactoryIfAbsent<MarkEntryDone>(
+    () => MarkEntryDone(serviceLocator()),
+  );
+  _registerFactoryIfAbsent<UpdateEntry>(() => UpdateEntry(serviceLocator()));
 
-  serviceLocator.registerFactory(
+  _registerFactoryIfAbsent<AppAuthUiController>(
     () => AppAuthUiController(
       watchAuthStatus: serviceLocator(),
       logout: serviceLocator(),
     ),
   );
-  serviceLocator.registerFactory(
+  _registerFactoryIfAbsent<AuthBloc>(
     () => AuthBloc(
       watchAuthStatus: serviceLocator(),
       getAccounts: serviceLocator(),
@@ -77,11 +102,31 @@ Future<void> configureDependencies({
       logout: serviceLocator(),
     ),
   );
-  serviceLocator.registerFactoryParam<EntryFeedBloc, String, void>(
-    (accountName, _) => EntryFeedBloc(
-      accountName: accountName,
-      getEntries: serviceLocator(),
-      getEntryCategories: serviceLocator(),
-    )..add(const EntryFeedStarted()),
-  );
+  if (!serviceLocator.isRegistered<EntryFeedBloc>()) {
+    serviceLocator.registerFactoryParam<EntryFeedBloc, String, void>(
+      (accountName, _) => EntryFeedBloc(
+        accountName: accountName,
+        getEntries: serviceLocator(),
+        getEntryCategories: serviceLocator(),
+      )..add(const EntryFeedStarted()),
+    );
+  }
+  if (!serviceLocator.isRegistered<EntryFormBloc>()) {
+    serviceLocator
+        .registerFactoryParam<EntryFormBloc, EntryFormBlocParams, void>(
+          (params, _) => EntryFormBloc(
+            params: params,
+            getEntryCategories: serviceLocator(),
+            getEntries: serviceLocator(),
+            getEntryDetails: serviceLocator(),
+            addNewEntry: serviceLocator(),
+            updateEntry: serviceLocator(),
+          )..add(const EntryFormStarted()),
+        );
+  }
+}
+
+void _registerFactoryIfAbsent<T extends Object>(T Function() factoryFunc) {
+  if (serviceLocator.isRegistered<T>()) return;
+  serviceLocator.registerFactory<T>(factoryFunc);
 }
