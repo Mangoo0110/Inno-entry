@@ -25,6 +25,7 @@ class EntrySearchField extends StatelessWidget {
         height: 44,
         child: TextField(
           controller: controller,
+          onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
           onChanged: onChanged,
           onSubmitted: onSubmitted,
           textInputAction: TextInputAction.search,
