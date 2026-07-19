@@ -5,4 +5,5 @@ export 'get_entries.dart';
 export 'get_entry_categories.dart';
 export 'get_entry_details.dart';
 export 'mark_entry_done.dart';
+export 'restore_deleted_entry.dart';
 export 'update_entry.dart';

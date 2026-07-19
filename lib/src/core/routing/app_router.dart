@@ -50,8 +50,13 @@ GoRouter createAppRouter() {
                         '${AppRoutes.entryForm}?entryId=${entry.uId.uId}',
                       );
                     },
-                    onAccountPressed: () {
-                      context.read<AppAuthUiController>().logout();
+                    onLogoutPressed: () {
+                      return context.read<AppAuthUiController>().logout();
+                    },
+                    onDeleteAccountPressed: () {
+                      return context
+                          .read<AppAuthUiController>()
+                          .deleteCurrentAccount();
                     },
                   );
                 },
