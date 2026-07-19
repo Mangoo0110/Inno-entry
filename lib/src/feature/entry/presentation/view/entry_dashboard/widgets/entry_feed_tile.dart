@@ -23,7 +23,7 @@ class EntryFeedTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        //borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Row(
@@ -148,28 +148,32 @@ class _EntryFeedTileAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = amount;
-    if (value != null) {
-      return ConstrainedBox(
-        constraints: const BoxConstraints(minWidth: 56),
-        child: Text(
-          '\$${value.toStringAsFixed(2)}',
-          textAlign: TextAlign.right,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-            color: foregroundColor,
-            fontWeight: FontWeight.w800,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        if (value != null)  ConstrainedBox(
+            constraints: const BoxConstraints(minWidth: 56),
+            child: Text(
+              '\$${value.toStringAsFixed(2)}',
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: foregroundColor,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
-        ),
-      );
-    }
-
-    return IconButton(
-      tooltip: 'Delete entry',
-      visualDensity: VisualDensity.compact,
-      onPressed: onDelete,
-      color: mutedColor,
-      icon: const Icon(Icons.delete_outline_rounded, size: 20),
+        IconButton(
+          tooltip: 'Delete entry',
+          visualDensity: VisualDensity.compact,
+          onPressed: onDelete,
+          color: mutedColor,
+          icon: const Icon(Icons.delete_outline_rounded, size: 20),
+        )
+      ],
     );
+    
   }
 }

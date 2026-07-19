@@ -8,8 +8,8 @@ import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/w
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_home_header.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_search_field.dart';
 
-class AllEntriesViewSection extends StatelessWidget {
-  const AllEntriesViewSection({
+class EntryFeedView extends StatelessWidget {
+  const EntryFeedView({
     super.key,
     required this.accountName,
     required this.monthAmount,
