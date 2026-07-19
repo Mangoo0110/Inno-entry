@@ -2,10 +2,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
+import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
 import 'package:inno_entry/src/core/di/service_locator.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/routing/auth_route_gate.dart';
+import 'package:inno_entry/src/core/routing/go_router_refresh_stream.dart';
 import 'package:inno_entry/src/feature/auth/presentation/screens/auth_screen.dart';
+import 'package:inno_entry/src/feature/auth/domain/entities/auth_status.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/user_dashboard_view.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_result.dart';
@@ -13,9 +16,21 @@ import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entr
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_view.dart';
 
-GoRouter createAppRouter() {
+GoRouter createAppRouter({required AppAuthUiController authController}) {
   return GoRouter(
     initialLocation: AppRoutes.auth,
+    refreshListenable: GoRouterRefreshStream(authController.stream),
+    redirect: (context, state) {
+      final authStatus = authController.state;
+      final isAuthRoute = state.uri.path == AppRoutes.auth;
+
+      return switch (authStatus) {
+        LoadingAuthSignature() => null,
+        Authenticated() when isAuthRoute => AppRoutes.entryFeed,
+        UnAuthenticated() when !isAuthRoute => AppRoutes.auth,
+        _ => null,
+      };
+    },
     routes: [
       GoRoute(
         path: AppRoutes.auth,
@@ -59,6 +74,9 @@ GoRouter createAppRouter() {
                       return context
                           .read<AppAuthUiController>()
                           .deleteCurrentAccount();
+                    },
+                    onThemePressed: () {
+                      context.read<AppThemeCubit>().toggle();
                     },
                   );
                 },
