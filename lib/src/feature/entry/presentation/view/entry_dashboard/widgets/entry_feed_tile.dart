@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
@@ -29,7 +31,7 @@ class EntryFeedTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              EntryCategoryIcon(category: entry.category),
+              _EntryFeedTileLeading(entry: entry),
               const SizedBox(width: 12),
               Expanded(
                 child: _EntryFeedTileBody(
@@ -58,6 +60,34 @@ class EntryFeedTile extends StatelessWidget {
   }
 }
 
+class _EntryFeedTileLeading extends StatelessWidget {
+  const _EntryFeedTileLeading({required this.entry});
+
+  final EntryBrief entry;
+
+  @override
+  Widget build(BuildContext context) {
+    final photoPath = entry.photoPath;
+    if (photoPath == null || photoPath.isEmpty) {
+      return EntryCategoryIcon(category: entry.category);
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(100),
+      child: SizedBox.square(
+        dimension: 44,
+        child: Image.file(
+          File(photoPath),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return EntryCategoryIcon(category: entry.category);
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class _EntryFeedTileBody extends StatelessWidget {
   const _EntryFeedTileBody({
     required this.title,
@@ -77,6 +107,7 @@ class _EntryFeedTileBody extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 3,
       children: [
         Text(
           title,
@@ -87,14 +118,12 @@ class _EntryFeedTileBody extends StatelessWidget {
             height: 1.1,
           ),
         ),
-        const SizedBox(height: 3),
-        Text(
+        if(note.isNotEmpty)Text(
           note,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.bodySmall?.copyWith(color: colors.grey, height: 1.2),
         ),
-        const SizedBox(height: 6),
         _EntryStatusPill(label: tagLabel),
       ],
     );
@@ -152,7 +181,8 @@ class _EntryFeedTileAction extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        if (value != null)  ConstrainedBox(
+        if (value != null && value > 0)
+          ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 56),
             child: Text(
               '\$${value.toStringAsFixed(2)}',
@@ -171,9 +201,8 @@ class _EntryFeedTileAction extends StatelessWidget {
           onPressed: onDelete,
           color: mutedColor,
           icon: const Icon(Icons.delete_outline_rounded, size: 20),
-        )
+        ),
       ],
     );
-    
   }
 }
