@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inno_entry/src/core/di/service_locator.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
 import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:inno_entry/src/feature/auth/presentation/screens/views/create_account_view.dart';
@@ -11,7 +12,24 @@ import 'package:inno_entry/src/feature/auth/presentation/screens/views/welcome_v
 import 'package:inno_entry/src/feature/auth/presentation/widgets/error_notice.dart';
 
 class AuthScreen extends StatelessWidget {
-  const AuthScreen({super.key});
+  const AuthScreen({super.key, this.createBloc});
+
+  final AuthBloc Function()? createBloc;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) {
+        final bloc = createBloc?.call() ?? serviceLocator<AuthBloc>();
+        return bloc..add(const AuthStarted());
+      },
+      child: const _AuthScreenView(),
+    );
+  }
+}
+
+class _AuthScreenView extends StatelessWidget {
+  const _AuthScreenView();
 
   @override
   Widget build(BuildContext context) {

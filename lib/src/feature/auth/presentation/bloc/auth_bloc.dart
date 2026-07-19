@@ -191,7 +191,7 @@ final class AuthBloc extends Bloc<AuthEvent, AuthUiState> {
     }
 
     await _refreshAccounts(emit);
-    _applyAuthStatus(response.data!, emit);
+    emit(state.copyWith(isSubmitting: false, clearError: true));
   }
 
   void _onPinDigitPressed(
@@ -250,7 +250,7 @@ final class AuthBloc extends Bloc<AuthEvent, AuthUiState> {
       return;
     }
 
-    _applyAuthStatus(response.data!, emit);
+    emit(state.copyWith(isSubmitting: false, clearError: true));
   }
 
   Future<void> _onLogoutRequested(
@@ -264,7 +264,7 @@ final class AuthBloc extends Bloc<AuthEvent, AuthUiState> {
       return;
     }
 
-    _applyAuthStatus(response.data!, emit);
+    emit(state.copyWith(isSubmitting: false, clearError: true));
   }
 
   Future<void> _onAuthStatusChanged(
@@ -305,7 +305,6 @@ final class AuthBloc extends Bloc<AuthEvent, AuthUiState> {
       case Authenticated(:final account):
         emit(
           state.copyWith(
-            view: AuthView.signedIn,
             currentAccountName: account.uniqueName,
             selectedAccountName: account.uniqueName,
             pin: '',
