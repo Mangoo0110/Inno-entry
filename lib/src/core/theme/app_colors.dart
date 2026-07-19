@@ -31,7 +31,7 @@ class AppColors {
   static const Color _primaryColor = Color(0xFF00696D);
   static const Color _darkPrimaryColor = Color(0xFF4FD3D8);
   static const Color _secondaryContainerColor = Color(0xFFD5ECEA);
-  static const Color _darkSecondaryContainerColor = Color(0xFF173233);
+  static const Color _darkSecondaryContainerColor = Color(0xff324b4d);
   static const Color _surfaceColor = Color(0xFFFAFCFB);
   static const Color _darkSurfaceColor = Color(0xFF071212);
   static const Color _backgroundColor = Color.fromARGB(255, 255, 255, 255);

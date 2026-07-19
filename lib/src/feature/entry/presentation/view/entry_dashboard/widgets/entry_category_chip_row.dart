@@ -63,17 +63,19 @@ class _EntryCategoryChip extends StatelessWidget {
     final colors = AppColors.context(context);
     final textStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-      color: isSelected ? colors.activeButtonContentColor : colors.textColor,
+      color: isSelected ? 
+        (Theme.brightnessOf(context) == Brightness.dark ? colors.primaryColor : colors.textColor)
+        : (Theme.brightnessOf(context) == Brightness.dark ? colors.grey : colors.textColor),
       height: 1,
       overflow: TextOverflow.visible,
     );
 
     return Material(
-      color: isSelected ? colors.primaryColor : colors.backgroundColor,
+      color: isSelected ? colors.secondaryColor : colors.backgroundColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
         side: BorderSide(
-          color: isSelected ? colors.primaryColor : colors.borderColor,
+          color: isSelected ? colors.secondaryColor : colors.borderColor,
         ),
       ),
       child: InkWell(
@@ -83,7 +85,15 @@ class _EntryCategoryChip extends StatelessWidget {
           constraints: const BoxConstraints(minWidth: 48),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-            child: Center(child: Text(label, style: textStyle)),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              spacing: 4,
+              children: [
+                if(isSelected) Icon(Icons.done, size: 16, color: Theme.brightnessOf(context) == Brightness.dark ? colors.primaryColor: colors.textColor,),
+                Text(label, style: textStyle),
+              ],
+            ),
           ),
         ),
       ),

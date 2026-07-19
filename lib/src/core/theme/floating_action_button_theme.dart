@@ -5,17 +5,17 @@ class FloatingActionButtonThemes {
       FloatingActionButtonThemeData(
         backgroundColor: AppColors.light().primaryColor,
         foregroundColor: AppColors.light().buttonContentColor,
-        shape: CircleBorder(),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 2.0,
-        iconSize: AppSizes.mediumIconSize,
+        iconSize: AppSizes.largeIconSize,
       );
 
   static FloatingActionButtonThemeData darkTheme =
       FloatingActionButtonThemeData(
         backgroundColor: AppColors.dark().primaryColor,
         foregroundColor: AppColors.dark().buttonContentColor,
-        shape: CircleBorder(),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         elevation: 2.0,
-        iconSize: AppSizes.mediumIconSize,
+        iconSize: AppSizes.largeIconSize,
       );
 }
