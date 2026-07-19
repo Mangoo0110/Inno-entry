@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
@@ -27,6 +29,7 @@ typedef _FeedSelection = ({
   List<EntryBrief> entries,
   String? errorMessage,
   bool hasReachedMax,
+  bool isFiltering,
   bool isLoading,
   bool isPageLoading,
 });
@@ -38,6 +41,7 @@ class UserDashboardView extends StatelessWidget {
     required this.createBloc,
     required this.onLogoutPressed,
     required this.onDeleteAccountPressed,
+    required this.onThemePressed,
     required this.onAddEntryPressed,
     required this.onEntryPressed,
   });
@@ -46,6 +50,7 @@ class UserDashboardView extends StatelessWidget {
   final EntryFeedBloc Function(String accountName) createBloc;
   final Future<void> Function() onLogoutPressed;
   final Future<bool> Function() onDeleteAccountPressed;
+  final VoidCallback onThemePressed;
   final Future<bool?> Function() onAddEntryPressed;
   final Future<EntryDetailResult?> Function(EntryBrief entry) onEntryPressed;
 
@@ -58,6 +63,7 @@ class UserDashboardView extends StatelessWidget {
         accountName: accountName,
         onLogoutPressed: onLogoutPressed,
         onDeleteAccountPressed: onDeleteAccountPressed,
+        onThemePressed: onThemePressed,
         onAddEntryPressed: onAddEntryPressed,
         onEntryPressed: onEntryPressed,
       ),
@@ -70,6 +76,7 @@ class _UserDashboardContent extends StatefulWidget {
     required this.accountName,
     required this.onLogoutPressed,
     required this.onDeleteAccountPressed,
+    required this.onThemePressed,
     required this.onAddEntryPressed,
     required this.onEntryPressed,
   });
@@ -77,6 +84,7 @@ class _UserDashboardContent extends StatefulWidget {
   final String accountName;
   final Future<void> Function() onLogoutPressed;
   final Future<bool> Function() onDeleteAccountPressed;
+  final VoidCallback onThemePressed;
   final Future<bool?> Function() onAddEntryPressed;
   final Future<EntryDetailResult?> Function(EntryBrief entry) onEntryPressed;
 
@@ -86,6 +94,7 @@ class _UserDashboardContent extends StatefulWidget {
 
 class _UserDashboardContentState extends State<_UserDashboardContent> {
   late final TextEditingController _searchController;
+  Timer? _searchDebounce;
   bool _isAccountMenuOpen = false;
 
   @override
@@ -96,6 +105,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
@@ -142,9 +152,19 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
             children: [
               CustomScrollView(
                 slivers: [
-                  _DashboardHeader(onAccountPressed: _toggleAccountMenu),
+                  _DashboardHeader(
+                    onThemePressed: _handleThemePressed,
+                    onAccountPressed: _toggleAccountMenu,
+                  ),
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                  _DashboardSearch(searchController: _searchController),
+                  _DashboardSearch(
+                    searchController: _searchController,
+                    onChanged: _scheduleSearch,
+                    onSubmitted: (search) {
+                      _searchDebounce?.cancel();
+                      _submitSearch(search);
+                    },
+                  ),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
                   const _DashboardCategories(),
                   const _DashboardFilteringBar(),
@@ -207,8 +227,25 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
     }
   }
 
+  void _scheduleSearch(String search) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      if (!mounted) return;
+      _submitSearch(search);
+    });
+  }
+
+  void _submitSearch(String search) {
+    context.read<EntryFeedBloc>().add(EntryFeedSearchSubmitted(search.trim()));
+  }
+
   void _toggleAccountMenu() {
     setState(() => _isAccountMenuOpen = !_isAccountMenuOpen);
+  }
+
+  void _handleThemePressed() {
+    _closeAccountMenu();
+    widget.onThemePressed();
   }
 
   void _closeAccountMenu() {
@@ -304,8 +341,12 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 }
 
 class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader({required this.onAccountPressed});
+  const _DashboardHeader({
+    required this.onThemePressed,
+    required this.onAccountPressed,
+  });
 
+  final VoidCallback onThemePressed;
   final VoidCallback onAccountPressed;
 
   @override
@@ -328,6 +369,7 @@ class _DashboardHeader extends StatelessWidget {
             syncLabel: state.isSyncing ? 'syncing...' : 'synced just now',
             isSyncing: state.isSyncing,
             lastSyncedAt: state.lastSyncedAt,
+            onThemePressed: onThemePressed,
             onAccountPressed: onAccountPressed,
           ),
         );
@@ -539,20 +581,23 @@ class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
 }
 
 class _DashboardSearch extends StatelessWidget {
-  const _DashboardSearch({required this.searchController});
+  const _DashboardSearch({
+    required this.searchController,
+    required this.onChanged,
+    required this.onSubmitted,
+  });
 
   final TextEditingController searchController;
+  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSubmitted;
 
   @override
   Widget build(BuildContext context) {
     return SliverToBoxAdapter(
       child: EntrySearchField(
         controller: searchController,
-        onSubmitted: (search) {
-          context.read<EntryFeedBloc>().add(
-            EntryFeedSearchSubmitted(search.trim()),
-          );
-        },
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
       ),
     );
   }
@@ -616,6 +661,7 @@ class _DashboardFeed extends StatelessWidget {
           entries: state.entries,
           errorMessage: state.errorMessage,
           hasReachedMax: state.hasReachedMax,
+          isFiltering: state.isFiltering,
           isLoading: state.isLoading,
           isPageLoading: state.isPageLoading,
         );
@@ -650,11 +696,13 @@ class _DashboardFeed extends StatelessWidget {
           onDeleteEntry: (entry) {
             context.read<EntryFeedBloc>().add(EntryFeedEntryDeleted(entry));
           },
-          onLoadMore: () {
-            context.read<EntryFeedBloc>().add(
-              const EntryFeedNextPageRequested(),
-            );
-          },
+          onLoadMore: state.isFiltering
+              ? null
+              : () {
+                  context.read<EntryFeedBloc>().add(
+                    const EntryFeedNextPageRequested(),
+                  );
+                },
         );
       },
     );

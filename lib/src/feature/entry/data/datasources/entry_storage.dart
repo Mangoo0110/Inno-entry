@@ -135,14 +135,21 @@ base class EntryStorage implements EntryLocalDatasource {
     final whereArgs = <Object?>[params.owner];
 
     if (category.isNotEmpty && category.toLowerCase() != 'all') {
-      whereParts.add('${EntryModelFields.category} = ?');
-      whereArgs.add(category);
+      whereParts.add('LOWER(${EntryModelFields.category}) = ?');
+      whereArgs.add(category.toLowerCase());
     }
 
     // Avoid a pointless LIKE scan when the user has not typed a search term.
     if (search.isNotEmpty) {
-      whereParts.add('LOWER(${EntryModelFields.title}) LIKE ?');
-      whereArgs.add('%$search%');
+      whereParts.add(
+        '('
+        'LOWER(${EntryModelFields.title}) LIKE ? OR '
+        'LOWER(${EntryModelFields.note}) LIKE ? OR '
+        'LOWER(${EntryModelFields.category}) LIKE ?'
+        ')',
+      );
+      final searchPattern = '%$search%';
+      whereArgs.addAll([searchPattern, searchPattern, searchPattern]);
     }
 
     final rawEntries = await _getDataBase().query(
