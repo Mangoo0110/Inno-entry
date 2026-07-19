@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
+import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
 import 'package:inno_entry/src/feature/auth/data/datasources/auth_storage.dart';
 import 'package:inno_entry/src/feature/auth/data/datasources/interface/auth_datasources.dart';
 import 'package:inno_entry/src/feature/auth/data/repo/auth_repo_impl.dart';
@@ -90,14 +91,23 @@ Future<void> configureDependencies({
     () => RestoreDeletedEntry(serviceLocator()),
   );
 
-  _registerFactoryIfAbsent<AppAuthUiController>(
-    () => AppAuthUiController(
-      watchAuthStatus: serviceLocator(),
-      logout: serviceLocator(),
-      deleteCurrentAccount: serviceLocator(),
-      deleteAllEntry: serviceLocator(),
-    ),
-  );
+  if (!serviceLocator.isRegistered<AppAuthUiController>()) {
+    serviceLocator.registerLazySingleton<AppAuthUiController>(
+      () => AppAuthUiController(
+        watchAuthStatus: serviceLocator(),
+        logout: serviceLocator(),
+        deleteCurrentAccount: serviceLocator(),
+        deleteAllEntry: serviceLocator(),
+      ),
+      dispose: (controller) => controller.close(),
+    );
+  }
+  if (!serviceLocator.isRegistered<AppThemeCubit>()) {
+    serviceLocator.registerLazySingleton<AppThemeCubit>(
+      AppThemeCubit.new,
+      dispose: (cubit) => cubit.close(),
+    );
+  }
   _registerFactoryIfAbsent<AuthBloc>(
     () => AuthBloc(
       watchAuthStatus: serviceLocator(),

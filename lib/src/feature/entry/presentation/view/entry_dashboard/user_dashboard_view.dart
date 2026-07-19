@@ -41,6 +41,7 @@ class UserDashboardView extends StatelessWidget {
     required this.createBloc,
     required this.onLogoutPressed,
     required this.onDeleteAccountPressed,
+    required this.onThemePressed,
     required this.onAddEntryPressed,
     required this.onEntryPressed,
   });
@@ -49,6 +50,7 @@ class UserDashboardView extends StatelessWidget {
   final EntryFeedBloc Function(String accountName) createBloc;
   final Future<void> Function() onLogoutPressed;
   final Future<bool> Function() onDeleteAccountPressed;
+  final VoidCallback onThemePressed;
   final Future<bool?> Function() onAddEntryPressed;
   final Future<EntryDetailResult?> Function(EntryBrief entry) onEntryPressed;
 
@@ -61,6 +63,7 @@ class UserDashboardView extends StatelessWidget {
         accountName: accountName,
         onLogoutPressed: onLogoutPressed,
         onDeleteAccountPressed: onDeleteAccountPressed,
+        onThemePressed: onThemePressed,
         onAddEntryPressed: onAddEntryPressed,
         onEntryPressed: onEntryPressed,
       ),
@@ -73,6 +76,7 @@ class _UserDashboardContent extends StatefulWidget {
     required this.accountName,
     required this.onLogoutPressed,
     required this.onDeleteAccountPressed,
+    required this.onThemePressed,
     required this.onAddEntryPressed,
     required this.onEntryPressed,
   });
@@ -80,6 +84,7 @@ class _UserDashboardContent extends StatefulWidget {
   final String accountName;
   final Future<void> Function() onLogoutPressed;
   final Future<bool> Function() onDeleteAccountPressed;
+  final VoidCallback onThemePressed;
   final Future<bool?> Function() onAddEntryPressed;
   final Future<EntryDetailResult?> Function(EntryBrief entry) onEntryPressed;
 
@@ -147,7 +152,10 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
             children: [
               CustomScrollView(
                 slivers: [
-                  _DashboardHeader(onAccountPressed: _toggleAccountMenu),
+                  _DashboardHeader(
+                    onThemePressed: _handleThemePressed,
+                    onAccountPressed: _toggleAccountMenu,
+                  ),
                   const SliverToBoxAdapter(child: SizedBox(height: 16)),
                   _DashboardSearch(
                     searchController: _searchController,
@@ -233,6 +241,11 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 
   void _toggleAccountMenu() {
     setState(() => _isAccountMenuOpen = !_isAccountMenuOpen);
+  }
+
+  void _handleThemePressed() {
+    _closeAccountMenu();
+    widget.onThemePressed();
   }
 
   void _closeAccountMenu() {
@@ -328,8 +341,12 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 }
 
 class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader({required this.onAccountPressed});
+  const _DashboardHeader({
+    required this.onThemePressed,
+    required this.onAccountPressed,
+  });
 
+  final VoidCallback onThemePressed;
   final VoidCallback onAccountPressed;
 
   @override
@@ -352,6 +369,7 @@ class _DashboardHeader extends StatelessWidget {
             syncLabel: state.isSyncing ? 'syncing...' : 'synced just now',
             isSyncing: state.isSyncing,
             lastSyncedAt: state.lastSyncedAt,
+            onThemePressed: onThemePressed,
             onAccountPressed: onAccountPressed,
           ),
         );
