@@ -191,3 +191,8 @@ data-layer models such as `EntryModel` and `EntryBriefModel`. These models own t
 conversion to and from database row maps through `toDb()` and `fromDb()` methods.
 The repository remains responsible for translating domain use-case params into
 data models before calling the datasource.
+
+# UI + Domain + Data layer trade off
+Right now total amount is the total of all the entries with the amount. Which is not right. 
+Domain layer should have a clear contract to get this information from the datasource or the source of truth.
+Domain layer should return a sum or total with rspond to filters like date, search, categories. And UI or UI-controller or, in this case bloc can decide what type of combination total amount result it wants to show to the user.
