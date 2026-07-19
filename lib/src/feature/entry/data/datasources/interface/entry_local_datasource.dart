@@ -5,6 +5,7 @@ import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.da
 import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
 
 abstract interface class EntryLocalDatasource {
@@ -17,6 +18,10 @@ abstract interface class EntryLocalDatasource {
   Future<EntryModel> updateEntry({required UpdateEntryParams params});
 
   Future<void> deleteEntry({required DeleteEntryParam params});
+
+  Future<EntryModel> restoreDeletedEntry({
+    required RestoreDeletedEntryParams params,
+  });
 
   Future<void> deleteAllEntry({required DeleteAllEntryParam params});
 

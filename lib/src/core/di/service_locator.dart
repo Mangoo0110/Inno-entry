@@ -85,11 +85,16 @@ Future<void> configureDependencies({
     () => MarkEntryDone(serviceLocator()),
   );
   _registerFactoryIfAbsent<UpdateEntry>(() => UpdateEntry(serviceLocator()));
+  _registerFactoryIfAbsent<RestoreDeletedEntry>(
+    () => RestoreDeletedEntry(serviceLocator()),
+  );
 
   _registerFactoryIfAbsent<AppAuthUiController>(
     () => AppAuthUiController(
       watchAuthStatus: serviceLocator(),
       logout: serviceLocator(),
+      deleteCurrentAccount: serviceLocator(),
+      deleteAllEntry: serviceLocator(),
     ),
   );
   _registerFactoryIfAbsent<AuthBloc>(
@@ -108,6 +113,9 @@ Future<void> configureDependencies({
         accountName: accountName,
         getEntries: serviceLocator(),
         getEntryCategories: serviceLocator(),
+        getEntryDetails: serviceLocator(),
+        deleteEntry: serviceLocator(),
+        restoreDeletedEntry: serviceLocator(),
       )..add(const EntryFeedStarted()),
     );
   }

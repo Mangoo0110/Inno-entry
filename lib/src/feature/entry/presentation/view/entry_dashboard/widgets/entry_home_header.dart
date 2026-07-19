@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_amount_badge.dart';
@@ -8,6 +10,8 @@ class EntryHomeHeader extends StatelessWidget {
     required this.accountName,
     required this.monthAmount,
     required this.syncLabel,
+    this.isSyncing = false,
+    this.lastSyncedAt,
     this.onThemePressed,
     this.onAccountPressed,
   });
@@ -15,6 +19,8 @@ class EntryHomeHeader extends StatelessWidget {
   final String accountName;
   final double monthAmount;
   final String syncLabel;
+  final bool isSyncing;
+  final DateTime? lastSyncedAt;
   final VoidCallback? onThemePressed;
   final VoidCallback? onAccountPressed;
 
@@ -59,7 +65,11 @@ class EntryHomeHeader extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     EntryAmountBadge(amount: monthAmount),
-                    _EntrySyncLabel(label: syncLabel),
+                    _EntrySyncLabel(
+                      label: syncLabel,
+                      isSyncing: isSyncing,
+                      lastSyncedAt: lastSyncedAt,
+                    ),
                   ],
                 ),
               ],
@@ -81,14 +91,52 @@ class EntryHomeHeader extends StatelessWidget {
   }
 }
 
-class _EntrySyncLabel extends StatelessWidget {
-  const _EntrySyncLabel({required this.label});
+class _EntrySyncLabel extends StatefulWidget {
+  const _EntrySyncLabel({
+    required this.label,
+    required this.isSyncing,
+    required this.lastSyncedAt,
+  });
 
   final String label;
+  final bool isSyncing;
+  final DateTime? lastSyncedAt;
+
+  @override
+  State<_EntrySyncLabel> createState() => _EntrySyncLabelState();
+}
+
+class _EntrySyncLabelState extends State<_EntrySyncLabel> {
+  Timer? _timer;
+  DateTime _now = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
+      setState(() => _now = DateTime.now());
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _EntrySyncLabel oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.lastSyncedAt != widget.lastSyncedAt) {
+      _now = DateTime.now();
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.context(context);
+    final label = _label;
 
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -107,6 +155,18 @@ class _EntrySyncLabel extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String get _label {
+    if (widget.isSyncing) return 'syncing...';
+    final lastSyncedAt = widget.lastSyncedAt;
+    if (lastSyncedAt == null) return widget.label;
+
+    final elapsed = _now.difference(lastSyncedAt);
+    if (elapsed.inSeconds < 5) return 'synced just now';
+    if (elapsed.inMinutes < 1) return 'synced ${elapsed.inSeconds}s ago';
+    if (elapsed.inHours < 1) return 'synced ${elapsed.inMinutes}m ago';
+    return 'synced ${elapsed.inHours}h ago';
   }
 }
 
