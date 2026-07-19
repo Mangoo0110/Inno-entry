@@ -18,6 +18,9 @@ class EntryFeedView extends StatelessWidget {
     required this.selectedCategory,
     required this.entries,
     required this.onCategorySelected,
+    this.scrollController,
+    this.isPageLoading = false,
+    this.hasReachedMax = false,
     this.searchController,
     this.onSearchChanged,
     this.onSearchSubmitted,
@@ -35,6 +38,9 @@ class EntryFeedView extends StatelessWidget {
   final String selectedCategory;
   final List<EntryBrief> entries;
   final ValueChanged<EntryCategory> onCategorySelected;
+  final ScrollController? scrollController;
+  final bool isPageLoading;
+  final bool hasReachedMax;
   final TextEditingController? searchController;
   final ValueChanged<String>? onSearchChanged;
   final ValueChanged<String>? onSearchSubmitted;
@@ -49,6 +55,7 @@ class EntryFeedView extends StatelessWidget {
     return Stack(
       children: [
         CustomScrollView(
+          controller: scrollController,
           slivers: [
             SliverToBoxAdapter(
               child: EntryHomeHeader(
@@ -83,6 +90,8 @@ class EntryFeedView extends StatelessWidget {
             else
               EntryFeedList(
                 entries: entries,
+                isPageLoading: isPageLoading,
+                hasReachedMax: hasReachedMax,
                 onEntryPressed: onEntryPressed,
                 onDeleteEntry: onDeleteEntry,
               ),
@@ -116,7 +125,7 @@ class _EntryAddButton extends StatelessWidget {
         backgroundColor: colors.primaryColor,
         foregroundColor: colors.activeButtonContentColor,
         onPressed: onPressed,
-        child: const Icon(Icons.add_rounded, size: 24, weight: 2,),
+        child: const Icon(Icons.add_rounded, size: 24, weight: 2),
       ),
     );
   }
