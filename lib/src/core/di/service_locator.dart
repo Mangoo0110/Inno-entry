@@ -1,6 +1,10 @@
 import 'package:get_it/get_it.dart';
 import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
 import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
+import 'package:inno_entry/src/feature/category/data/repo/category_repo_impl.dart';
+import 'package:inno_entry/src/feature/category/domain/repo/category_repo.dart';
+import 'package:inno_entry/src/feature/category/domain/usecases/category_usecases.dart';
+import 'package:inno_entry/src/feature/category/presentation/bloc/category_choose_bloc.dart';
 import 'package:inno_entry/src/feature/auth/data/datasources/auth_storage.dart';
 import 'package:inno_entry/src/feature/auth/data/datasources/interface/auth_datasources.dart';
 import 'package:inno_entry/src/feature/auth/data/repo/auth_repo_impl.dart';
@@ -44,6 +48,10 @@ Future<void> configureDependencies({
       () => AuthRepoImpl(authLocalDatasource: serviceLocator()),
     );
   }
+  if (!serviceLocator.isRegistered<CategoryRepo>()) {
+    serviceLocator.registerLazySingleton<CategoryRepo>(CategoryRepoImpl.new);
+  }
+
   if (!serviceLocator.isRegistered<EntryRepo>()) {
     serviceLocator.registerLazySingleton<EntryRepo>(
       () => EntryRepoImpl(entryLocalDatasource: serviceLocator()),
@@ -71,10 +79,11 @@ Future<void> configureDependencies({
     () => LoginWithExistingAccount(serviceLocator()),
   );
 
-  _registerFactoryIfAbsent<GetEntries>(() => GetEntries(serviceLocator()));
   _registerFactoryIfAbsent<GetEntryCategories>(
     () => GetEntryCategories(serviceLocator()),
   );
+
+  _registerFactoryIfAbsent<GetEntries>(() => GetEntries(serviceLocator()));
   _registerFactoryIfAbsent<AddNewEntry>(() => AddNewEntry(serviceLocator()));
   _registerFactoryIfAbsent<DeleteEntry>(() => DeleteEntry(serviceLocator()));
   _registerFactoryIfAbsent<DeleteAllEntry>(
@@ -108,6 +117,15 @@ Future<void> configureDependencies({
       dispose: (cubit) => cubit.close(),
     );
   }
+
+  if (!serviceLocator.isRegistered<CategoryChooseBloc>()) {
+    serviceLocator.registerFactory<CategoryChooseBloc>(
+      () =>
+          CategoryChooseBloc(getEntryCategories: serviceLocator())
+            ..add(const CategoryChooseStarted()),
+    );
+  }
+
   _registerFactoryIfAbsent<AuthBloc>(
     () => AuthBloc(
       watchAuthStatus: serviceLocator(),
@@ -123,7 +141,6 @@ Future<void> configureDependencies({
       (accountName, _) => EntryFeedBloc(
         accountName: accountName,
         getEntries: serviceLocator(),
-        getEntryCategories: serviceLocator(),
         getEntryDetails: serviceLocator(),
         deleteEntry: serviceLocator(),
         restoreDeletedEntry: serviceLocator(),

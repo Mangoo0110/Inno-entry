@@ -129,12 +129,12 @@ base class EntryStorage implements EntryLocalDatasource {
     required GetEntriesParams params,
   }) async {
     final search = params.filters.search.trim().toLowerCase();
-    final category = params.filters.category.trim();
+    final category = params.filters.category?.trim();
 
     final whereParts = <String>['${EntryModelFields.owner} = ?'];
     final whereArgs = <Object?>[params.owner];
 
-    if (category.isNotEmpty && category.toLowerCase() != 'all') {
+    if (category != null && category.isNotEmpty) {
       whereParts.add('LOWER(${EntryModelFields.category}) = ?');
       whereArgs.add(category.toLowerCase());
     }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
-import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/entry_feed_view.dart';
+import 'package:inno_entry/src/app/view/entry_feed_view.dart';
 import 'package:inno_entry/src/previews/entry_dashboard_preview_data.dart';
 
 @Preview(name: 'All entries section', size: Size(393, 852))
@@ -14,8 +14,8 @@ Widget allEntriesViewSectionPreview() {
         accountName: 'Rahul Sharma',
         monthAmount: 1247.80,
         syncLabel: 'synced 3s ago',
-        categories: entryPreviewCategories,
-        selectedCategory: 'All',
+        categoriesFuture: Future.value(entryPreviewCategories),
+        selectedCategory: null,
         entries: entryPreviewEntries,
         onCategorySelected: (_) {},
         onSearchChanged: (_) {},
@@ -46,8 +46,8 @@ Widget allEntriesViewSectionDarkPreview() {
         accountName: 'Rahul Sharma',
         monthAmount: 1247.80,
         syncLabel: 'synced 3s ago',
-        categories: entryPreviewCategories,
-        selectedCategory: 'All',
+        categoriesFuture: Future.value(entryPreviewCategories),
+        selectedCategory: null,
         entries: entryPreviewEntries,
         onCategorySelected: (_) {},
         onSearchChanged: (_) {},
@@ -73,8 +73,8 @@ Widget allEntriesViewSectionEmptyPreview() {
         accountName: 'Rahul Sharma',
         monthAmount: 0,
         syncLabel: 'synced 3s ago',
-        categories: entryPreviewCategories,
-        selectedCategory: 'All',
+        categoriesFuture: Future.value(entryPreviewCategories),
+        selectedCategory: null,
         entries: const [],
         onCategorySelected: (_) {},
         onAddEntry: () {},

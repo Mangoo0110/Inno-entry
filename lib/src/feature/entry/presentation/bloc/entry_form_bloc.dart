@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inno_entry/src/core/usecases/base_usecase.dart';
 import 'package:inno_entry/src/feature/category/domain/entities/entry_category.dart';
+import 'package:inno_entry/src/feature/category/domain/usecases/category_usecases.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_uid.dart';
@@ -379,7 +380,7 @@ final class EntryFormBloc extends Bloc<EntryFormEvent, EntryFormState> {
     final response = await _getEntries(
       GetEntriesParams(
         owner: state.accountName,
-        filters: Filters(category: 'All', search: '', limit: 1000, page: 0),
+        filters: Filters(category: null, search: '', limit: 1000, page: 0),
       ),
     );
     return response.success ? response.data ?? const [] : null;

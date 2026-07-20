@@ -1,17 +1,12 @@
 import 'package:flutter/widgets.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
-import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
-import 'package:inno_entry/src/core/di/service_locator.dart';
+import 'package:inno_entry/src/app/view/user_dashboard_view.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/routing/auth_route_gate.dart';
 import 'package:inno_entry/src/core/routing/go_router_refresh_stream.dart';
-import 'package:inno_entry/src/feature/auth/presentation/screens/auth_screen.dart';
 import 'package:inno_entry/src/feature/auth/domain/entities/auth_status.dart';
-import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
-import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/user_dashboard_view.dart';
-import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_result.dart';
+import 'package:inno_entry/src/feature/auth/presentation/screens/auth_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_view.dart';
@@ -55,30 +50,7 @@ GoRouter createAppRouter({required AppAuthUiController authController}) {
               policy: AuthRoutePolicy.signedInOnly,
               child: AuthenticatedAccountRoute(
                 builder: (context, accountName) {
-                  return UserDashboardView(
-                    accountName: accountName,
-                    createBloc: (accountName) =>
-                        serviceLocator<EntryFeedBloc>(param1: accountName),
-                    onAddEntryPressed: () {
-                      return context.push<bool>(AppRoutes.entryForm);
-                    },
-                    onEntryPressed: (entry) {
-                      return context.push<EntryDetailResult>(
-                        '${AppRoutes.entryDetail}?entryId=${entry.uId.uId}',
-                      );
-                    },
-                    onLogoutPressed: () {
-                      return context.read<AppAuthUiController>().logout();
-                    },
-                    onDeleteAccountPressed: () {
-                      return context
-                          .read<AppAuthUiController>()
-                          .deleteCurrentAccount();
-                    },
-                    onThemePressed: () {
-                      context.read<AppThemeCubit>().toggle();
-                    },
-                  );
+                  return UserDashboardView(accountName: accountName);
                 },
               ),
             ),
