@@ -196,3 +196,5 @@ data models before calling the datasource.
 Right now total amount is the total of all the entries with the amount. Which is not right. 
 Domain layer should have a clear contract to get this information from the datasource or the source of truth.
 Domain layer should return a sum or total with rspond to filters like date, search, categories. And UI or UI-controller or, in this case bloc can decide what type of combination total amount result it wants to show to the user.
+
+Categories are also not stored in or provided from the sqflite database. They are static or hard coded for the moment. However follows architecture decisions and data provided by the repo implementor!
