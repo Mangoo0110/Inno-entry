@@ -3,9 +3,8 @@ import 'package:inno_entry/src/core/usecases/base_usecase.dart';
 import 'package:inno_entry/src/feature/category/domain/entities/entry_category.dart';
 import 'package:inno_entry/src/feature/category/domain/usecases/category_usecases.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry.dart';
-import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_uid.dart';
-import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/get_entry_total_amount_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
@@ -164,12 +163,12 @@ final class EntryFormBloc extends Bloc<EntryFormEvent, EntryFormState> {
   EntryFormBloc({
     required EntryFormBlocParams params,
     required GetEntryCategories getEntryCategories,
-    required GetEntries getEntries,
+    required GetEntryTotalAmount getEntryTotalAmount,
     required GetEntryDetails getEntryDetails,
     required AddNewEntry addNewEntry,
     required UpdateEntry updateEntry,
   }) : _getEntryCategories = getEntryCategories,
-       _getEntries = getEntries,
+       _getEntryTotalAmount = getEntryTotalAmount,
        _getEntryDetails = getEntryDetails,
        _addNewEntry = addNewEntry,
        _updateEntry = updateEntry,
@@ -187,7 +186,7 @@ final class EntryFormBloc extends Bloc<EntryFormEvent, EntryFormState> {
   }
 
   final GetEntryCategories _getEntryCategories;
-  final GetEntries _getEntries;
+  final GetEntryTotalAmount _getEntryTotalAmount;
   final GetEntryDetails _getEntryDetails;
   final AddNewEntry _addNewEntry;
   final UpdateEntry _updateEntry;
@@ -209,10 +208,13 @@ final class EntryFormBloc extends Bloc<EntryFormEvent, EntryFormState> {
       return;
     }
 
-    final summaryEntries = await _getSummaryEntries();
-    if (summaryEntries == null) return emit(state.copyWith(isLoading: false));
-
-    final summaries = _calculateSummaries(summaryEntries);
+    final summaries = await _getSummaries();
+    if (summaries.errorMessage != null) {
+      emit(
+        state.copyWith(isLoading: false, errorMessage: summaries.errorMessage),
+      );
+      return;
+    }
     final categories = List<EntryCategory>.unmodifiable(
       categoriesResponse.data!,
     );
@@ -356,8 +358,7 @@ final class EntryFormBloc extends Bloc<EntryFormEvent, EntryFormState> {
       return;
     }
 
-    final summaryEntries = await _getSummaryEntries();
-    final summaries = _calculateSummaries(summaryEntries ?? const []);
+    final summaries = await _getSummaries();
     emit(
       state.copyWith(
         todayAmount: summaries.todayAmount,
@@ -376,33 +377,40 @@ final class EntryFormBloc extends Bloc<EntryFormEvent, EntryFormState> {
     emit(state.copyWith(saved: false));
   }
 
-  Future<List<EntryBrief>?> _getSummaryEntries() async {
-    final response = await _getEntries(
-      GetEntriesParams(
-        owner: state.accountName,
-        filters: Filters(category: null, search: '', limit: 1000, page: 0),
+  Future<({double todayAmount, double monthAmount, String? errorMessage})>
+  _getSummaries() async {
+    final totals = await Future.wait([
+      _getEntryTotalAmount(
+        GetEntryTotalAmountParams.today(owner: state.accountName),
       ),
-    );
-    return response.success ? response.data ?? const [] : null;
-  }
+      _getEntryTotalAmount(
+        GetEntryTotalAmountParams.thisMonth(owner: state.accountName),
+      ),
+    ]);
 
-  ({double todayAmount, double monthAmount}) _calculateSummaries(
-    List<EntryBrief> entries,
-  ) {
-    final now = DateTime.now();
-    var todayAmount = 0.0;
-    var monthAmount = 0.0;
-
-    for (final entry in entries) {
-      final amount = entry.amount ?? 0;
-      final updatedAt = entry.updatedAt.toLocal();
-      if (updatedAt.year == now.year && updatedAt.month == now.month) {
-        monthAmount += amount;
-        if (updatedAt.day == now.day) todayAmount += amount;
-      }
+    final todayResponse = totals[0];
+    if (!todayResponse.success || todayResponse.data == null) {
+      return (
+        todayAmount: state.todayAmount,
+        monthAmount: state.monthAmount,
+        errorMessage: todayResponse.message,
+      );
     }
 
-    return (todayAmount: todayAmount, monthAmount: monthAmount);
+    final monthResponse = totals[1];
+    if (!monthResponse.success || monthResponse.data == null) {
+      return (
+        todayAmount: state.todayAmount,
+        monthAmount: state.monthAmount,
+        errorMessage: monthResponse.message,
+      );
+    }
+
+    return (
+      todayAmount: todayResponse.data!,
+      monthAmount: monthResponse.data!,
+      errorMessage: null,
+    );
   }
 
   String _defaultCategory(List<EntryCategory> categories) {

@@ -3,6 +3,7 @@ export 'delete_all_entry.dart';
 export 'delete_entry.dart';
 export 'get_entries.dart';
 export 'get_entry_details.dart';
+export 'get_entry_total_amount.dart';
 export 'mark_entry_done.dart';
 export 'restore_deleted_entry.dart';
 export 'update_entry.dart';

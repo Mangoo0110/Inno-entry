@@ -92,6 +92,9 @@ Future<void> configureDependencies({
   _registerFactoryIfAbsent<GetEntryDetails>(
     () => GetEntryDetails(serviceLocator()),
   );
+  _registerFactoryIfAbsent<GetEntryTotalAmount>(
+    () => GetEntryTotalAmount(serviceLocator()),
+  );
   _registerFactoryIfAbsent<MarkEntryDone>(
     () => MarkEntryDone(serviceLocator()),
   );
@@ -142,6 +145,7 @@ Future<void> configureDependencies({
         accountName: accountName,
         getEntries: serviceLocator(),
         getEntryDetails: serviceLocator(),
+        getEntryTotalAmount: serviceLocator(),
         deleteEntry: serviceLocator(),
         restoreDeletedEntry: serviceLocator(),
       )..add(const EntryFeedStarted()),
@@ -153,7 +157,7 @@ Future<void> configureDependencies({
           (params, _) => EntryFormBloc(
             params: params,
             getEntryCategories: serviceLocator(),
-            getEntries: serviceLocator(),
+            getEntryTotalAmount: serviceLocator(),
             getEntryDetails: serviceLocator(),
             addNewEntry: serviceLocator(),
             updateEntry: serviceLocator(),
