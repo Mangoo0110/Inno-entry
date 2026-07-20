@@ -265,7 +265,7 @@ base class EntryStorage implements EntryLocalDatasource {
       CREATE INDEX entries_owner_idx
       ON ${EntryModelFields.tableName} (${EntryModelFields.owner})
     ''');
-
+    // For search or filter entries with category name
     await db.execute('''
       CREATE INDEX entries_owner_category_idx
       ON ${EntryModelFields.tableName} (
@@ -273,7 +273,7 @@ base class EntryStorage implements EntryLocalDatasource {
         ${EntryModelFields.category}
       )
     ''');
-
+    // Need for entry amount sum, [in future if needed filtering with dates]
     await db.execute('''
       CREATE INDEX entries_owner_created_at_idx
       ON ${EntryModelFields.tableName} (
