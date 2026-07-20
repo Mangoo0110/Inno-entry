@@ -7,6 +7,7 @@ import 'package:inno_entry/src/feature/entry/domain/params/delete_all_entry.dart
 import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/get_entry_total_amount_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
@@ -71,6 +72,20 @@ base class EntryRepoImpl with ErrorHandler implements EntryRepo {
       tryFunc: () async {
         final entries = await entryLocalDatasource.getEntries(params: params);
         return SuccessRepoCall(data: entries);
+      },
+    );
+  }
+
+  @override
+  AsyncRequest<double> getEntryTotalAmount({
+    required GetEntryTotalAmountParams params,
+  }) {
+    return asyncTryCatch(
+      tryFunc: () async {
+        final totalAmount = await entryLocalDatasource.getEntryTotalAmount(
+          params: params,
+        );
+        return SuccessRepoCall(data: totalAmount);
       },
     );
   }

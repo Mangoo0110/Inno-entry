@@ -3,11 +3,13 @@ import 'package:inno_entry/src/feature/entry/domain/entities/entry.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/get_entry_total_amount_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/delete_entry.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/get_entries.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/get_entry_details.dart';
+import 'package:inno_entry/src/feature/entry/domain/usecases/get_entry_total_amount.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/restore_deleted_entry.dart';
 
 sealed class EntryFeedEvent {
@@ -80,6 +82,7 @@ final class EntryFeedState {
     this.hasReachedMax = false,
     this.nextPage = 0,
     this.pageSize = EntryFeedBloc.pageSize,
+    this.monthAmount = 0,
     this.lastSyncedAt,
     this.effect,
     this.errorMessage,
@@ -99,13 +102,10 @@ final class EntryFeedState {
   final bool hasReachedMax;
   final int nextPage;
   final int pageSize;
+  final double monthAmount;
   final DateTime? lastSyncedAt;
   final EntryFeedEffect? effect;
   final String? errorMessage;
-
-  double get monthAmount {
-    return entries.fold<double>(0, (sum, entry) => sum + (entry.amount ?? 0));
-  }
 
   EntryFeedState copyWith({
     List<EntryBrief>? entries,
@@ -117,6 +117,7 @@ final class EntryFeedState {
     bool? hasReachedMax,
     int? nextPage,
     int? pageSize,
+    double? monthAmount,
     DateTime? lastSyncedAt,
     Object? effect = _unchanged,
     String? errorMessage,
@@ -135,6 +136,7 @@ final class EntryFeedState {
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       nextPage: nextPage ?? this.nextPage,
       pageSize: pageSize ?? this.pageSize,
+      monthAmount: monthAmount ?? this.monthAmount,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
       effect: effect == _unchanged ? this.effect : effect as EntryFeedEffect?,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
@@ -149,10 +151,12 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
     required String accountName,
     required GetEntries getEntries,
     required GetEntryDetails getEntryDetails,
+    required GetEntryTotalAmount getEntryTotalAmount,
     required DeleteEntry deleteEntry,
     required RestoreDeletedEntry restoreDeletedEntry,
   }) : _getEntries = getEntries,
        _getEntryDetails = getEntryDetails,
+       _getEntryTotalAmount = getEntryTotalAmount,
        _deleteEntry = deleteEntry,
        _restoreDeletedEntry = restoreDeletedEntry,
        super(EntryFeedState.initial(accountName)) {
@@ -170,6 +174,7 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
 
   final GetEntries _getEntries;
   final GetEntryDetails _getEntryDetails;
+  final GetEntryTotalAmount _getEntryTotalAmount;
   final DeleteEntry _deleteEntry;
   final RestoreDeletedEntry _restoreDeletedEntry;
   int _requestId = 0;
@@ -357,6 +362,27 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
       return;
     }
 
+    var monthAmount = state.monthAmount;
+    if (!append) {
+      final totalResponse = await _getEntryTotalAmount(
+        GetEntryTotalAmountParams.thisMonth(owner: state.accountName),
+      );
+      if (requestId != _requestId) return;
+
+      if (!totalResponse.success || totalResponse.data == null) {
+        emit(
+          state.copyWith(
+            isLoading: false,
+            isFiltering: false,
+            isPageLoading: false,
+            errorMessage: totalResponse.message,
+          ),
+        );
+        return;
+      }
+      monthAmount = totalResponse.data!;
+    }
+
     final fetchedEntries = entriesResponse.data!;
     final updatedEntries = append
         ? <EntryBrief>[...state.entries, ...fetchedEntries]
@@ -369,6 +395,7 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
         isFiltering: false,
         isPageLoading: false,
         hasReachedMax: fetchedEntries.length < pageSize,
+        monthAmount: monthAmount,
         nextPage: page + 1,
         lastSyncedAt: DateTime.now(),
         clearError: true,

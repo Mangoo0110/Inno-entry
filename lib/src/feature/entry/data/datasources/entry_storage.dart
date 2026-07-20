@@ -1,4 +1,4 @@
-import 'package:inno_entry/src/feature/entry/data/datasources/interface/entry_datasources.dart';
+﻿import 'package:inno_entry/src/feature/entry/data/datasources/interface/entry_datasources.dart';
 import 'package:inno_entry/src/feature/entry/data/models/entry_brief_model.dart';
 import 'package:inno_entry/src/feature/entry/data/models/entry_model.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_uid.dart';
@@ -6,6 +6,7 @@ import 'package:inno_entry/src/feature/entry/domain/params/delete_all_entry.dart
 import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/get_entry_total_amount_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
@@ -165,6 +166,30 @@ base class EntryStorage implements EntryLocalDatasource {
   }
 
   @override
+  Future<double> getEntryTotalAmount({
+    required GetEntryTotalAmountParams params,
+  }) async {
+    final rows = await _getDataBase().rawQuery(
+      // If returned amount is null, use 0 instead
+      '''
+      SELECT COALESCE(SUM(${EntryModelFields.amount}), 0) AS total
+      FROM ${EntryModelFields.tableName}
+      WHERE ${EntryModelFields.owner} = ?
+        AND ${EntryModelFields.createdAt} >= ?
+        AND ${EntryModelFields.createdAt} < ?
+      ''',
+      [
+        params.owner,
+        params.dateFrom.toIso8601String(),
+        params.dateTo.toIso8601String(),
+      ],
+    );
+
+    final total = rows.first['total'];
+    return (total as num?)?.toDouble() ?? 0;
+  }
+
+  @override
   Future<EntryModel> getEntryDetails({
     required GetEntryDetailsParams params,
   }) async {
@@ -249,6 +274,13 @@ base class EntryStorage implements EntryLocalDatasource {
       )
     ''');
 
+    await db.execute('''
+      CREATE INDEX entries_owner_created_at_idx
+      ON ${EntryModelFields.tableName} (
+        ${EntryModelFields.owner},
+        ${EntryModelFields.createdAt}
+      )
+    ''');
     await db.execute('''
       CREATE INDEX entries_owner_updated_at_idx
       ON ${EntryModelFields.tableName} (
