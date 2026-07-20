@@ -2,11 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
+import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
+import 'package:inno_entry/src/core/di/service_locator.dart';
+import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
-import 'package:inno_entry/src/feature/category/domain/entities/entry_category.dart';
+import 'package:inno_entry/src/feature/category/presentation/bloc/category_choose_bloc.dart';
+import 'package:inno_entry/src/feature/category/presentation/widgets/category_choose_chip_row.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
-import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_category_chip_row.dart';
+import 'package:inno_entry/src/app/view/widgets/delete_account_dialog.dart';
+import 'package:inno_entry/src/app/view/widgets/user_dashboard_account_menu.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_empty_feed.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_feed_list.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_filtering_bar.dart';
@@ -21,10 +28,6 @@ typedef _HeaderSelection = ({
   bool isSyncing,
   DateTime? lastSyncedAt,
 });
-typedef _CategorySelection = ({
-  List<EntryCategory> categories,
-  String selectedCategory,
-});
 typedef _FeedSelection = ({
   List<EntryBrief> entries,
   String? errorMessage,
@@ -35,58 +38,29 @@ typedef _FeedSelection = ({
 });
 
 class UserDashboardView extends StatelessWidget {
-  const UserDashboardView({
-    super.key,
-    required this.accountName,
-    required this.createBloc,
-    required this.onLogoutPressed,
-    required this.onDeleteAccountPressed,
-    required this.onThemePressed,
-    required this.onAddEntryPressed,
-    required this.onEntryPressed,
-  });
+  const UserDashboardView({super.key, required this.accountName});
 
   final String accountName;
-  final EntryFeedBloc Function(String accountName) createBloc;
-  final Future<void> Function() onLogoutPressed;
-  final Future<bool> Function() onDeleteAccountPressed;
-  final VoidCallback onThemePressed;
-  final Future<bool?> Function() onAddEntryPressed;
-  final Future<EntryDetailResult?> Function(EntryBrief entry) onEntryPressed;
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
+    return MultiBlocProvider(
       key: ValueKey(accountName),
-      create: (_) => createBloc(accountName),
-      child: _UserDashboardContent(
-        accountName: accountName,
-        onLogoutPressed: onLogoutPressed,
-        onDeleteAccountPressed: onDeleteAccountPressed,
-        onThemePressed: onThemePressed,
-        onAddEntryPressed: onAddEntryPressed,
-        onEntryPressed: onEntryPressed,
-      ),
+      providers: [
+        BlocProvider(
+          create: (_) => serviceLocator<EntryFeedBloc>(param1: accountName),
+        ),
+        BlocProvider(create: (_) => serviceLocator<CategoryChooseBloc>()),
+      ],
+      child: _UserDashboardContent(accountName: accountName),
     );
   }
 }
 
 class _UserDashboardContent extends StatefulWidget {
-  const _UserDashboardContent({
-    required this.accountName,
-    required this.onLogoutPressed,
-    required this.onDeleteAccountPressed,
-    required this.onThemePressed,
-    required this.onAddEntryPressed,
-    required this.onEntryPressed,
-  });
+  const _UserDashboardContent({required this.accountName});
 
   final String accountName;
-  final Future<void> Function() onLogoutPressed;
-  final Future<bool> Function() onDeleteAccountPressed;
-  final VoidCallback onThemePressed;
-  final Future<bool?> Function() onAddEntryPressed;
-  final Future<EntryDetailResult?> Function(EntryBrief entry) onEntryPressed;
 
   @override
   State<_UserDashboardContent> createState() => _UserDashboardContentState();
@@ -184,7 +158,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
                 Positioned(
                   top: 108,
                   right: 16,
-                  child: _DashboardAccountMenu(
+                  child: UserDashboardAccountMenu(
                     onLogoutPressed: _handleLogoutPressed,
                     onDeleteAccountPressed: _handleDeleteAccountPressed,
                   ),
@@ -197,24 +171,16 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
     );
   }
 
-  Future<void> _openAddEntry() async {
-    _closeAccountMenu();
-    final saved = await widget.onAddEntryPressed();
-    if (!mounted || saved != true) return;
-    context.read<EntryFeedBloc>()
-      ..add(const EntryFeedStarted())
-      ..add(const EntryFeedSaveConfirmed());
-  }
-
-  Future<void> _openEntry(EntryBrief entry) async {
-    _closeAccountMenu();
-    final result = await widget.onEntryPressed(entry);
-    if (!mounted || result == null) return;
+  void _handleEntryDetailResult(EntryDetailResult? result) {
+    if (result == null) return;
 
     final bloc = context.read<EntryFeedBloc>()..add(const EntryFeedStarted());
     if (result is EntryDetailSaved) {
       bloc.add(const EntryFeedSaveConfirmed());
-    } else if (result is EntryDetailDeleted) {
+      return;
+    }
+
+    if (result is EntryDetailDeleted) {
       showEntryDeletedSnackBar(
         context,
         actionLabel: 'UNDO',
@@ -225,6 +191,24 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
         },
       );
     }
+  }
+
+  Future<void> _openAddEntry() async {
+    _closeAccountMenu();
+    final saved = await context.push<bool>(AppRoutes.entryForm);
+    if (!mounted || saved != true) return;
+    context.read<EntryFeedBloc>()
+      ..add(const EntryFeedStarted())
+      ..add(const EntryFeedSaveConfirmed());
+  }
+
+  Future<void> _openEntry(EntryBrief entry) async {
+    _closeAccountMenu();
+    final result = await context.push<EntryDetailResult>(
+      '${AppRoutes.entryDetail}?entryId=${entry.uId.uId}',
+    );
+    if (!mounted) return;
+    _handleEntryDetailResult(result);
   }
 
   void _scheduleSearch(String search) {
@@ -245,7 +229,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 
   void _handleThemePressed() {
     _closeAccountMenu();
-    widget.onThemePressed();
+    context.read<AppThemeCubit>().toggle();
   }
 
   void _closeAccountMenu() {
@@ -255,7 +239,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 
   Future<void> _handleLogoutPressed() async {
     _closeAccountMenu();
-    await widget.onLogoutPressed();
+    await context.read<AppAuthUiController>().logout();
   }
 
   Future<void> _handleDeleteAccountPressed() async {
@@ -264,9 +248,11 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
       context: context,
       barrierColor: const Color(0x990E1919),
       builder: (context) {
-        return _DeleteAccountDialog(
+        return DeleteAccountDialog(
           accountName: widget.accountName,
-          onDeletePressed: widget.onDeleteAccountPressed,
+          onDeletePressed: () {
+            return context.read<AppAuthUiController>().deleteCurrentAccount();
+          },
         );
       },
     );
@@ -378,208 +364,6 @@ class _DashboardHeader extends StatelessWidget {
   }
 }
 
-class _DashboardAccountMenu extends StatelessWidget {
-  const _DashboardAccountMenu({
-    required this.onLogoutPressed,
-    required this.onDeleteAccountPressed,
-  });
-
-  final VoidCallback onLogoutPressed;
-  final VoidCallback onDeleteAccountPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.context(context);
-
-    return Material(
-      color: colors.popupBackgroundColor,
-      elevation: 14,
-      shadowColor: Colors.black.withAlpha(45),
-      borderRadius: BorderRadius.circular(10),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 250),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _DashboardAccountMenuItem(
-                icon: Icons.logout_rounded,
-                label: 'Log out',
-                color: colors.textColor,
-                onPressed: onLogoutPressed,
-              ),
-              const SizedBox(height: 4),
-              _DashboardAccountMenuItem(
-                icon: Icons.delete_outline_rounded,
-                label: 'Delete account',
-                color: colors.errorColor,
-                onPressed: onDeleteAccountPressed,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DashboardAccountMenuItem extends StatelessWidget {
-  const _DashboardAccountMenuItem({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onPressed,
-      child: SizedBox(
-        height: 46,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
-          child: Row(
-            children: [
-              Icon(icon, size: 20, color: color),
-              const SizedBox(width: 18),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DeleteAccountDialog extends StatefulWidget {
-  const _DeleteAccountDialog({
-    required this.accountName,
-    required this.onDeletePressed,
-  });
-
-  final String accountName;
-  final Future<bool> Function() onDeletePressed;
-
-  @override
-  State<_DeleteAccountDialog> createState() => _DeleteAccountDialogState();
-}
-
-class _DeleteAccountDialogState extends State<_DeleteAccountDialog> {
-  bool _isDeleting = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.context(context);
-
-    return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 332),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.popupBackgroundColor,
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 28, 28, 26),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Delete account?',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: colors.textColor,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  'This permanently removes "${widget.accountName}" and all '
-                  'of its entries, photos, and settings from this device. '
-                  'Other accounts are not affected.',
-                  maxLines: 6,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: colors.textColor.withAlpha(220),
-                    height: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 26),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: _isDeleting
-                          ? null
-                          : () => Navigator.of(context).pop(),
-                      style: TextButton.styleFrom(
-                        foregroundColor: colors.primaryColor,
-                        textStyle: Theme.of(context).textTheme.labelLarge
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      child: const Text('Cancel'),
-                    ),
-                    const SizedBox(width: 12),
-                    FilledButton(
-                      onPressed: _isDeleting ? null : _deleteAccount,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(92, 40),
-                        backgroundColor: const Color(0xFFC81E1E),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: colors.errorColor.withAlpha(
-                          150,
-                        ),
-                        disabledForegroundColor: Colors.white,
-                        textStyle: Theme.of(context).textTheme.labelLarge
-                            ?.copyWith(fontWeight: FontWeight.w800),
-                      ),
-                      child: _isDeleting
-                          ? const SizedBox.square(
-                              dimension: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('Delete'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _deleteAccount() async {
-    setState(() => _isDeleting = true);
-    final deleted = await widget.onDeletePressed();
-    if (!mounted) return;
-    Navigator.of(context).pop(deleted);
-  }
-}
-
 class _DashboardSearch extends StatelessWidget {
   const _DashboardSearch({
     required this.searchController,
@@ -608,19 +392,13 @@ class _DashboardCategories extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<EntryFeedBloc, EntryFeedState, _CategorySelection>(
-      selector: (state) {
-        return (
-          categories: state.categories,
-          selectedCategory: state.selectedCategory,
-        );
-      },
-      builder: (context, state) {
+    return BlocSelector<EntryFeedBloc, EntryFeedState, String?>(
+      selector: (state) => state.selectedCategory,
+      builder: (context, selectedCategory) {
         return SliverToBoxAdapter(
-          child: EntryCategoryChipRow(
-            categories: state.categories,
-            selectedCategory: state.selectedCategory,
-            onSelected: (category) {
+          child: CategoryChooseChipRow(
+            selectedCategory: selectedCategory,
+            onSelectCategory: (category) {
               context.read<EntryFeedBloc>().add(
                 EntryFeedCategorySelected(category),
               );
@@ -651,7 +429,7 @@ class _DashboardFilteringBar extends StatelessWidget {
 class _DashboardFeed extends StatelessWidget {
   const _DashboardFeed({required this.onEntryPressed});
 
-  final Future<void> Function(EntryBrief entry) onEntryPressed;
+  final ValueChanged<EntryBrief> onEntryPressed;
 
   @override
   Widget build(BuildContext context) {

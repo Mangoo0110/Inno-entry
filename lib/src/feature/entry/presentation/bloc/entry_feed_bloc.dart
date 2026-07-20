@@ -1,15 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inno_entry/src/core/usecases/base_usecase.dart';
-import 'package:inno_entry/src/feature/category/domain/entities/entry_category.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.dart';
-import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/delete_entry.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/get_entries.dart';
-import 'package:inno_entry/src/feature/entry/domain/usecases/get_entry_categories.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/get_entry_details.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/restore_deleted_entry.dart';
 
@@ -24,7 +21,7 @@ final class EntryFeedStarted extends EntryFeedEvent {
 final class EntryFeedCategorySelected extends EntryFeedEvent {
   const EntryFeedCategorySelected(this.category);
 
-  final EntryCategory category;
+  final String? category;
 }
 
 final class EntryFeedSearchSubmitted extends EntryFeedEvent {
@@ -74,9 +71,8 @@ final class EntryFeedDeletedEffect extends EntryFeedEffect {
 final class EntryFeedState {
   const EntryFeedState({
     required this.accountName,
-    this.categories = const [],
     this.entries = const [],
-    this.selectedCategory = 'All',
+    this.selectedCategory,
     this.search = '',
     this.isLoading = false,
     this.isFiltering = false,
@@ -94,9 +90,8 @@ final class EntryFeedState {
   }
 
   final String accountName;
-  final List<EntryCategory> categories;
   final List<EntryBrief> entries;
-  final String selectedCategory;
+  final String? selectedCategory;
   final String search;
   final bool isLoading;
   final bool isFiltering;
@@ -113,9 +108,8 @@ final class EntryFeedState {
   }
 
   EntryFeedState copyWith({
-    List<EntryCategory>? categories,
     List<EntryBrief>? entries,
-    String? selectedCategory,
+    Object? selectedCategory = _unchanged,
     String? search,
     bool? isLoading,
     bool? isFiltering,
@@ -130,9 +124,10 @@ final class EntryFeedState {
   }) {
     return EntryFeedState(
       accountName: accountName,
-      categories: categories ?? this.categories,
       entries: entries ?? this.entries,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
+      selectedCategory: selectedCategory == _unchanged
+          ? this.selectedCategory
+          : selectedCategory as String?,
       search: search ?? this.search,
       isLoading: isLoading ?? this.isLoading,
       isFiltering: isFiltering ?? this.isFiltering,
@@ -153,12 +148,10 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
   EntryFeedBloc({
     required String accountName,
     required GetEntries getEntries,
-    required GetEntryCategories getEntryCategories,
     required GetEntryDetails getEntryDetails,
     required DeleteEntry deleteEntry,
     required RestoreDeletedEntry restoreDeletedEntry,
   }) : _getEntries = getEntries,
-       _getEntryCategories = getEntryCategories,
        _getEntryDetails = getEntryDetails,
        _deleteEntry = deleteEntry,
        _restoreDeletedEntry = restoreDeletedEntry,
@@ -176,7 +169,6 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
   static const int pageSize = 20;
 
   final GetEntries _getEntries;
-  final GetEntryCategories _getEntryCategories;
   final GetEntryDetails _getEntryDetails;
   final DeleteEntry _deleteEntry;
   final RestoreDeletedEntry _restoreDeletedEntry;
@@ -200,24 +192,6 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
       ),
     );
 
-    final categoriesResponse = await _getEntryCategories(const NoParams());
-    if (requestId != _requestId) return;
-
-    if (!categoriesResponse.success || categoriesResponse.data == null) {
-      emit(
-        state.copyWith(
-          isLoading: false,
-          isFiltering: false,
-          isPageLoading: false,
-          errorMessage: categoriesResponse.message,
-        ),
-      );
-      return;
-    }
-
-    emit(
-      state.copyWith(categories: List.unmodifiable(categoriesResponse.data!)),
-    );
     await _loadEntries(emit, requestId: requestId, append: false);
   }
 
@@ -225,11 +199,11 @@ final class EntryFeedBloc extends Bloc<EntryFeedEvent, EntryFeedState> {
     EntryFeedCategorySelected event,
     Emitter<EntryFeedState> emit,
   ) async {
-    if (state.selectedCategory == event.category.name) return;
+    if (state.selectedCategory == event.category) return;
     final requestId = ++_requestId;
     emit(
       state.copyWith(
-        selectedCategory: event.category.name,
+        selectedCategory: event.category,
         isLoading: state.entries.isEmpty,
         isFiltering: state.entries.isNotEmpty,
         isPageLoading: false,

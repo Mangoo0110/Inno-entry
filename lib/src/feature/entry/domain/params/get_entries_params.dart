@@ -4,17 +4,16 @@ class GetEntriesParams {
   final Filters filters;
 
   GetEntriesParams({required this.owner, required this.filters});
-
 }
 
 class Filters {
-  String category;
+  String? category;
   String search;
   int? page;
   int? limit;
 
   Filters({
-    required this.category,
+    this.category,
     required this.search,
     required this.page,
     required this.limit,
