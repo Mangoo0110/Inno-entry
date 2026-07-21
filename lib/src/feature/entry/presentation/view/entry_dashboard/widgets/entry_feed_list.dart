@@ -27,7 +27,7 @@ class EntryFeedList extends StatelessWidget {
     final hasFooter = isPageLoading || hasReachedMax || onLoadMore != null;
     final childCount = entries.isEmpty
         ? 0
-        : entries.length * 2 - 1 + (hasFooter ? 1 : 0);
+        : entries.length + (hasFooter ? 1 : 0);
 
     return SliverPadding(
       padding: const EdgeInsets.only(top: 8, bottom: 92),
@@ -42,22 +42,25 @@ class EntryFeedList extends StatelessWidget {
             );
           }
 
-          if (index.isOdd) {
-            return Divider(
-              height: 1,
-              indent: 76,
-              endIndent: 16,
-              color: colors.dividerColor,
-            );
-          }
-
-          final entry = entries[index ~/ 2];
-          return EntryFeedTile(
-            entry: entry,
-            onTap: onEntryPressed == null ? null : () => onEntryPressed!(entry),
-            onDelete: onDeleteEntry == null
-                ? null
-                : () => onDeleteEntry!(entry),
+          final entry = entries[index];
+          return Column(
+            children: [
+              EntryFeedTile(
+                entry: entry,
+                onTap: onEntryPressed == null ? null : () => onEntryPressed!(entry),
+                onDelete: onDeleteEntry == null
+                    ? null
+                    : () => onDeleteEntry!(entry),
+              ),
+              if (index != entries.length - 1) 
+                 Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: colors.dividerColor,
+                )
+              
+            ],
           );
         },
       ),
