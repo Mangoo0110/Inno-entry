@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:inno_entry/main.dart';
-import 'package:inno_entry/src/core/di/service_locator.dart';
+import 'package:inno_entry/src/di/service_locator.dart';
 import 'package:inno_entry/src/feature/auth/data/datasources/auth_storage.dart';
 import 'package:inno_entry/src/feature/entry/data/datasources/entry_storage.dart';
 

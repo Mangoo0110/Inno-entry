@@ -7,7 +7,7 @@ import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
 import 'package:inno_entry/src/app/bloc/dashboard/dashboard_bloc.dart';
 import 'package:inno_entry/src/app/view/widgets/delete_account_dialog.dart';
 import 'package:inno_entry/src/app/view/widgets/user_dashboard_account_menu.dart';
-import 'package:inno_entry/src/core/di/service_locator.dart';
+import 'package:inno_entry/src/di/service_locator.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
 import 'package:inno_entry/src/feature/category/presentation/bloc/category_choose_bloc.dart';

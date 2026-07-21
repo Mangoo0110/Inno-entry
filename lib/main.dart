@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'src/app/bloc/app_theme_cubit.dart';
 import 'src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
-import 'src/core/di/service_locator.dart';
+import 'src/di/service_locator.dart';
 import 'src/core/routing/app_router.dart';
 import 'src/core/theme/app_theme.dart';
 

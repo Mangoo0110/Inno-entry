@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inno_entry/src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
 import 'package:inno_entry/src/app/view/user_dashboard_view.dart';
-import 'package:inno_entry/src/core/di/service_locator.dart';
+import 'package:inno_entry/src/di/service_locator.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/routing/auth_route_gate.dart';
 import 'package:inno_entry/src/core/routing/go_router_refresh_stream.dart';
