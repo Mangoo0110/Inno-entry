@@ -10,9 +10,7 @@ import 'package:inno_entry/src/feature/auth/presentation/widgets/create_account_
 import 'package:inno_entry/src/feature/auth/presentation/widgets/primary_action_button.dart';
 
 class CreateAccountView extends StatefulWidget {
-  const CreateAccountView({super.key, required this.state});
-
-  final RegisterState state;
+  const CreateAccountView({super.key});
 
   @override
   State<CreateAccountView> createState() => _CreateAccountViewState();
@@ -34,68 +32,71 @@ class _CreateAccountViewState extends State<CreateAccountView> {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.context(context);
-    final state = widget.state;
 
-    return AuthPageFrame(
-      key: const ValueKey(AppRoutes.authRegister),
-      headerTitle: 'Create account',
-      onBackPressed: () {
-        context.read<RegisterBloc>().add(const RegisterReset());
-        context.go(AppRoutes.auth);
-      },
-      bottomChild: Text(
-        "Your PIN always lives on your device. It's secured and never shared.",
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: colors.grey,
-          height: 1.4,
-          overflow: TextOverflow.visible,
-        ),
-      ),
-      children: [
-        const AuthIcon(
-          icon: Icons.person_add_alt_1_rounded,
-          noBackground: true,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'Create your account',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w400,
-            overflow: TextOverflow.visible,
-          ),
-        ),
-        const SizedBox(height: 36),
-        SizedBox(
-          height: 70,
-          child: TextField(
-            controller: _nameController,
-            expands: true,
-            maxLines: null,
-            enabled: !state.isSubmitting,
-            textCapitalization: TextCapitalization.words,
-            textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'Name',
-              hintText: 'Rahul Sharma',
+    return BlocBuilder<RegisterBloc, RegisterState>(
+      builder: (context, state) {
+        return AuthPageFrame(
+          key: const ValueKey(AppRoutes.authRegister),
+          headerTitle: 'Create account',
+          onBackPressed: () {
+            context.read<RegisterBloc>().add(const RegisterReset());
+            context.go(AppRoutes.auth);
+          },
+          bottomChild: Text(
+            "Your PIN always lives on your device. It's secured and never shared.",
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: colors.grey,
+              height: 1.4,
+              overflow: TextOverflow.visible,
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        CreateAccountPinField(
-          key: _pinFieldKey,
-          controller: _pinController,
-          enabled: !state.isSubmitting,
-          onSubmitted: _submit,
-        ),
-        const SizedBox(height: 20),
-        PrimaryActionButton(
-          label: 'Create account',
-          isProcessing: state.isSubmitting,
-          onPressed: _submit,
-        ),
-      ],
+          children: [
+            const AuthIcon(
+              icon: Icons.person_add_alt_1_rounded,
+              noBackground: true,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Create your account',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w400,
+                overflow: TextOverflow.visible,
+              ),
+            ),
+            const SizedBox(height: 36),
+            SizedBox(
+              height: 70,
+              child: TextField(
+                controller: _nameController,
+                expands: true,
+                maxLines: null,
+                enabled: !state.isSubmitting,
+                textCapitalization: TextCapitalization.words,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'Rahul Sharma',
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            CreateAccountPinField(
+              key: _pinFieldKey,
+              controller: _pinController,
+              enabled: !state.isSubmitting,
+              onSubmitted: _submit,
+            ),
+            const SizedBox(height: 20),
+            PrimaryActionButton(
+              label: 'Create account',
+              isProcessing: state.isSubmitting,
+              onPressed: _submit,
+            ),
+          ],
+        );
+      },
     );
   }
 

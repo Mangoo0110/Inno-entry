@@ -3,13 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inno_entry/src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
 import 'package:inno_entry/src/app/view/user_dashboard_view.dart';
+import 'package:inno_entry/src/core/di/service_locator.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/routing/auth_route_gate.dart';
 import 'package:inno_entry/src/core/routing/go_router_refresh_stream.dart';
 import 'package:inno_entry/src/feature/auth/domain/entities/auth_status.dart';
+import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
 import 'package:inno_entry/src/feature/auth/presentation/bloc/login/login_bloc.dart';
 import 'package:inno_entry/src/feature/auth/presentation/bloc/register/register_bloc.dart';
-import 'package:inno_entry/src/feature/auth/presentation/screens/auth_screen.dart';
+import 'package:inno_entry/src/feature/auth/presentation/screens/auth_shell.dart';
 import 'package:inno_entry/src/feature/auth/presentation/screens/views/create_account_view.dart';
 import 'package:inno_entry/src/feature/auth/presentation/screens/views/login_name_view.dart';
 import 'package:inno_entry/src/feature/auth/presentation/screens/views/pin_unlock_view.dart';
@@ -36,9 +38,27 @@ GoRouter createAppRouter({required AppAuthGuardBloc authGuardBloc}) {
     routes: [
       ShellRoute(
         builder: (context, state, child) {
-          return AuthRouteGate(
-            policy: AuthRoutePolicy.guestOnly,
-            child: AuthScreen(routePath: state.uri.path, child: child),
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => LoginBloc(
+                  isAccountNameAvailable:
+                      serviceLocator<IsAccountNameAvailable>(),
+                  unlockAccount: serviceLocator<UnlockAccount>(),
+                ),
+              ),
+              BlocProvider(
+                create: (_) => RegisterBloc(
+                  isAccountNameAvailable:
+                      serviceLocator<IsAccountNameAvailable>(),
+                  createAccount: serviceLocator<CreateAccount>(),
+                ),
+              ),
+            ],
+            child: AuthRouteGate(
+              policy: AuthRoutePolicy.guestOnly,
+              child: AuthShell(routePath: state.uri.path, child: child),
+            ),
           );
         },
         routes: [
@@ -58,11 +78,7 @@ GoRouter createAppRouter({required AppAuthGuardBloc authGuardBloc}) {
             pageBuilder: (context, state) {
               return NoTransitionPage(
                 key: state.pageKey,
-                child: BlocBuilder<LoginBloc, LoginState>(
-                  builder: (context, loginState) {
-                    return LoginNameView(state: loginState);
-                  },
-                ),
+                child: const LoginNameView(),
               );
             },
           ),
@@ -72,11 +88,7 @@ GoRouter createAppRouter({required AppAuthGuardBloc authGuardBloc}) {
             pageBuilder: (context, state) {
               return NoTransitionPage(
                 key: state.pageKey,
-                child: BlocBuilder<LoginBloc, LoginState>(
-                  builder: (context, loginState) {
-                    return PinUnlockView(state: loginState);
-                  },
-                ),
+                child: const PinUnlockView(),
               );
             },
           ),
@@ -86,11 +98,7 @@ GoRouter createAppRouter({required AppAuthGuardBloc authGuardBloc}) {
             pageBuilder: (context, state) {
               return NoTransitionPage(
                 key: state.pageKey,
-                child: BlocBuilder<RegisterBloc, RegisterState>(
-                  builder: (context, registerState) {
-                    return CreateAccountView(state: registerState);
-                  },
-                ),
+                child: const CreateAccountView(),
               );
             },
           ),

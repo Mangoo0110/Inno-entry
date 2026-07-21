@@ -11,8 +11,6 @@ import 'package:inno_entry/src/feature/auth/data/datasources/interface/auth_data
 import 'package:inno_entry/src/feature/auth/data/repo/auth_repo_impl.dart';
 import 'package:inno_entry/src/feature/auth/domain/repo/auth_repo.dart';
 import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/login/login_bloc.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/register/register_bloc.dart';
 import 'package:inno_entry/src/feature/entry/data/datasources/entry_storage.dart';
 import 'package:inno_entry/src/feature/entry/data/datasources/interface/entry_datasources.dart';
 import 'package:inno_entry/src/feature/entry/data/repo/entry_repo_impl.dart';
@@ -139,18 +137,6 @@ Future<void> configureDependencies({
     );
   }
 
-  _registerFactoryIfAbsent<LoginBloc>(
-    () => LoginBloc(
-      isAccountNameAvailable: serviceLocator(),
-      unlockAccount: serviceLocator(),
-    ),
-  );
-  _registerFactoryIfAbsent<RegisterBloc>(
-    () => RegisterBloc(
-      isAccountNameAvailable: serviceLocator(),
-      createAccount: serviceLocator(),
-    ),
-  );
   if (!serviceLocator.isRegistered<EntryFeedBloc>()) {
     serviceLocator.registerFactoryParam<EntryFeedBloc, String, void>(
       (accountName, _) => EntryFeedBloc(
