@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inno_entry/src/feature/auth/domain/entities/auth_params.dart';
 import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
 import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_form_params.dart';
 
@@ -106,7 +107,7 @@ final class LoginBloc extends Bloc<LoginEvent, LoginState> {
 
     emit(state.copyWith(isSubmitting: true, clearError: true));
     final response = await _unlockAccount(
-      AuthFormParams(accountName: accountName, pin: state.pin),
+      AuthParams(accountName: accountName, pin: state.pin),
     );
     if (!response.success || response.data == null) {
       emit(

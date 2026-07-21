@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inno_entry/src/feature/auth/domain/entities/auth_params.dart';
 import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_form_params.dart';
 
 part 'register_event.dart';
 part 'register_state.dart';
@@ -64,7 +64,7 @@ final class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
     }
 
     final response = await _createAccount(
-      AuthFormParams(accountName: accountName, pin: pin),
+      AuthParams(accountName: accountName, pin: pin),
     );
     if (!response.success || response.data == null) {
       emit(state.copyWith(isSubmitting: false, errorMessage: response.message));
