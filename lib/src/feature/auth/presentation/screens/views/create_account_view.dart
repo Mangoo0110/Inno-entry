@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_bloc.dart';
+import 'package:inno_entry/src/feature/auth/presentation/bloc/register/register_bloc.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/auth_icon.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/auth_page_frame.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/create_account_pin_field.dart';
@@ -10,7 +12,7 @@ import 'package:inno_entry/src/feature/auth/presentation/widgets/primary_action_
 class CreateAccountView extends StatefulWidget {
   const CreateAccountView({super.key, required this.state});
 
-  final AuthUiState state;
+  final RegisterState state;
 
   @override
   State<CreateAccountView> createState() => _CreateAccountViewState();
@@ -35,8 +37,12 @@ class _CreateAccountViewState extends State<CreateAccountView> {
     final state = widget.state;
 
     return AuthPageFrame(
-      key: const ValueKey(AuthView.createAccount),
+      key: const ValueKey(AppRoutes.authRegister),
       headerTitle: 'Create account',
+      onBackPressed: () {
+        context.read<RegisterBloc>().add(const RegisterReset());
+        context.go(AppRoutes.auth);
+      },
       bottomChild: Text(
         "Your PIN always lives on your device. It's secured and never shared.",
         textAlign: TextAlign.center,
@@ -98,8 +104,8 @@ class _CreateAccountViewState extends State<CreateAccountView> {
     final isPinValid = _pinFieldKey.currentState?.validateForSubmit() ?? true;
     if (!isPinValid) return;
 
-    context.read<AuthBloc>().add(
-      AuthCreateAccountSubmitted(accountName: _nameController.text, pin: pin),
+    context.read<RegisterBloc>().add(
+      RegisterSubmitted(accountName: _nameController.text, pin: pin),
     );
   }
 }

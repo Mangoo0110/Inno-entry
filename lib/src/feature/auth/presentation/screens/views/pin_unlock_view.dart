@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_bloc.dart';
+import 'package:inno_entry/src/feature/auth/presentation/bloc/login/login_bloc.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/auth_icon.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/auth_page_frame.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/pin_dots.dart';
@@ -11,7 +13,7 @@ import 'package:inno_entry/src/feature/auth/presentation/widgets/primary_action_
 class PinUnlockView extends StatelessWidget {
   const PinUnlockView({super.key, required this.state});
 
-  final AuthUiState state;
+  final LoginState state;
 
   @override
   Widget build(BuildContext context) {
@@ -19,8 +21,9 @@ class PinUnlockView extends StatelessWidget {
     final accountName = state.selectedAccountName ?? '';
 
     return AuthPageFrame(
-      key: const ValueKey(AuthView.pinUnlock),
+      key: const ValueKey(AppRoutes.authPin),
       headerTitle: '',
+      onBackPressed: () => context.go(AppRoutes.authLogin),
       maxWidth: 292,
       topSpacing: 108,
       children: [
@@ -54,8 +57,8 @@ class PinUnlockView extends StatelessWidget {
                   onPressed: state.pin.isEmpty || state.isSubmitting
                       ? null
                       : () {
-                          context.read<AuthBloc>().add(
-                            const AuthPinBackspacePressed(),
+                          context.read<LoginBloc>().add(
+                            const LoginPinBackspacePressed(),
                           );
                         },
                   icon: const Icon(Icons.backspace_outlined, size: 20),
@@ -75,12 +78,17 @@ class PinUnlockView extends StatelessWidget {
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           onPressed: state.canUnlock
               ? () {
-                  context.read<AuthBloc>().add(const AuthUnlockSubmitted());
+                  context.read<LoginBloc>().add(const LoginUnlockSubmitted());
                 }
               : null,
         ),
         const SizedBox(height: 136),
-        PinKeypad(isLocked: state.isSubmitting),
+        PinKeypad(
+          isLocked: state.isSubmitting,
+          onDigitPressed: (digit) {
+            context.read<LoginBloc>().add(LoginPinDigitPressed(digit));
+          },
+        ),
       ],
     );
   }

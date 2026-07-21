@@ -1,5 +1,5 @@
 import 'package:get_it/get_it.dart';
-import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
+import 'package:inno_entry/src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
 import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
 import 'package:inno_entry/src/feature/category/data/repo/category_repo_impl.dart';
 import 'package:inno_entry/src/feature/category/domain/repo/category_repo.dart';
@@ -10,7 +10,8 @@ import 'package:inno_entry/src/feature/auth/data/datasources/interface/auth_data
 import 'package:inno_entry/src/feature/auth/data/repo/auth_repo_impl.dart';
 import 'package:inno_entry/src/feature/auth/domain/repo/auth_repo.dart';
 import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_bloc.dart';
+import 'package:inno_entry/src/feature/auth/presentation/bloc/login/login_bloc.dart';
+import 'package:inno_entry/src/feature/auth/presentation/bloc/register/register_bloc.dart';
 import 'package:inno_entry/src/feature/entry/data/datasources/entry_storage.dart';
 import 'package:inno_entry/src/feature/entry/data/datasources/interface/entry_datasources.dart';
 import 'package:inno_entry/src/feature/entry/data/repo/entry_repo_impl.dart';
@@ -103,15 +104,12 @@ Future<void> configureDependencies({
     () => RestoreDeletedEntry(serviceLocator()),
   );
 
-  if (!serviceLocator.isRegistered<AppAuthUiController>()) {
-    serviceLocator.registerLazySingleton<AppAuthUiController>(
-      () => AppAuthUiController(
-        watchAuthStatus: serviceLocator(),
-        logout: serviceLocator(),
-        deleteCurrentAccount: serviceLocator(),
-        deleteAllEntry: serviceLocator(),
-      ),
-      dispose: (controller) => controller.close(),
+  if (!serviceLocator.isRegistered<AppAuthGuardBloc>()) {
+    serviceLocator.registerLazySingleton<AppAuthGuardBloc>(
+      () =>
+          AppAuthGuardBloc(watchAuthStatus: serviceLocator())
+            ..add(const AppAuthGuardStarted()),
+      dispose: (bloc) => bloc.close(),
     );
   }
   if (!serviceLocator.isRegistered<AppThemeCubit>()) {
@@ -129,14 +127,16 @@ Future<void> configureDependencies({
     );
   }
 
-  _registerFactoryIfAbsent<AuthBloc>(
-    () => AuthBloc(
-      watchAuthStatus: serviceLocator(),
-      getAccounts: serviceLocator(),
+  _registerFactoryIfAbsent<LoginBloc>(
+    () => LoginBloc(
+      isAccountNameAvailable: serviceLocator(),
+      unlockAccount: serviceLocator(),
+    ),
+  );
+  _registerFactoryIfAbsent<RegisterBloc>(
+    () => RegisterBloc(
       isAccountNameAvailable: serviceLocator(),
       createAccount: serviceLocator(),
-      unlockAccount: serviceLocator(),
-      logout: serviceLocator(),
     ),
   );
   if (!serviceLocator.isRegistered<EntryFeedBloc>()) {

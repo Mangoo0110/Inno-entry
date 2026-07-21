@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
+import 'package:inno_entry/src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
 import 'package:inno_entry/src/app/view/app_splash_view.dart';
 import 'package:inno_entry/src/feature/auth/domain/entities/auth_status.dart';
 
@@ -14,7 +14,7 @@ class AuthRouteGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppAuthUiController, AuthStatus>(
+    return BlocBuilder<AppAuthGuardBloc, AuthStatus>(
       buildWhen: _shouldBuildGate,
       builder: (context, state) {
         final shouldHideRoute = switch ((policy, state)) {
@@ -43,7 +43,7 @@ class AuthenticatedAccountRoute extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AppAuthUiController, AuthStatus>(
+    return BlocBuilder<AppAuthGuardBloc, AuthStatus>(
       buildWhen: _shouldBuild,
       builder: (context, state) {
         if (state is! Authenticated) {
