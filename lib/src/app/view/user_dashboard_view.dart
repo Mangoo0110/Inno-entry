@@ -7,9 +7,11 @@ import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
 import 'package:inno_entry/src/app/bloc/dashboard/dashboard_bloc.dart';
 import 'package:inno_entry/src/app/view/widgets/delete_account_dialog.dart';
 import 'package:inno_entry/src/app/view/widgets/user_dashboard_account_menu.dart';
-import 'package:inno_entry/src/di/service_locator.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
+import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
+import 'package:inno_entry/src/feature/category/domain/usecases/category_usecases.dart';
+import 'package:inno_entry/src/feature/entry/domain/usecases/entry_usecases.dart';
 import 'package:inno_entry/src/feature/category/presentation/bloc/category_choose_bloc.dart';
 import 'package:inno_entry/src/feature/category/presentation/widgets/category_choose_chip_row.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
@@ -33,14 +35,29 @@ class UserDashboardView extends StatelessWidget {
       key: ValueKey(accountName),
       providers: [
         BlocProvider(
-          create: (_) =>
-              serviceLocator<DashboardBloc>(param1: accountName)
-                ..add(const DashboardStarted()),
+          create: (context) => DashboardBloc(
+            accountName: accountName,
+            logout: context.read<Logout>(),
+            deleteCurrentAccount: context.read<DeleteCurrentAccount>(),
+            deleteAllEntry: context.read<DeleteAllEntry>(),
+            getEntryTotalAmount: context.read<GetEntryTotalAmount>(),
+          )..add(const DashboardStarted()),
         ),
         BlocProvider(
-          create: (_) => serviceLocator<EntryFeedBloc>(param1: accountName),
+          create: (context) => EntryFeedBloc(
+            accountName: accountName,
+            getEntries: context.read<GetEntries>(),
+            getEntryDetails: context.read<GetEntryDetails>(),
+            getEntryTotalAmount: context.read<GetEntryTotalAmount>(),
+            deleteEntry: context.read<DeleteEntry>(),
+            restoreDeletedEntry: context.read<RestoreDeletedEntry>(),
+          )..add(const EntryFeedStarted()),
         ),
-        BlocProvider(create: (_) => serviceLocator<CategoryChooseBloc>()),
+        BlocProvider(
+          create: (context) => CategoryChooseBloc(
+            getEntryCategories: context.read<GetEntryCategories>(),
+          )..add(const CategoryChooseStarted()),
+        ),
       ],
       child: const _UserDashboardContent(),
     );
