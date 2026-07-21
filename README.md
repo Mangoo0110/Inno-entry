@@ -4,7 +4,7 @@ An offline expense track or recording application.
 
 
 
-Platforms:- Android, iOS
+Platforms:- Android, iOS(Not tested)
 
 
 ## Tech Stack
@@ -42,12 +42,6 @@ Run on Android:
 
 ```sh
 flutter run -d android
-```
-
-Run on web for a quick local smoke check:
-
-```sh
-flutter run -d chrome
 ```
 
 Run static analysis:
