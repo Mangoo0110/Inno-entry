@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import 'package:inno_entry/src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
+import 'package:inno_entry/src/app/bloc/dashboard/dashboard_bloc.dart';
 import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
 import 'package:inno_entry/src/feature/category/data/repo/category_repo_impl.dart';
 import 'package:inno_entry/src/feature/category/domain/repo/category_repo.dart';
@@ -119,6 +120,17 @@ Future<void> configureDependencies({
     );
   }
 
+  if (!serviceLocator.isRegistered<DashboardBloc>()) {
+    serviceLocator.registerFactoryParam<DashboardBloc, String, void>(
+      (accountName, _) => DashboardBloc(
+        accountName: accountName,
+        logout: serviceLocator(),
+        deleteCurrentAccount: serviceLocator(),
+        deleteAllEntry: serviceLocator(),
+        getEntryTotalAmount: serviceLocator(),
+      ),
+    );
+  }
   if (!serviceLocator.isRegistered<CategoryChooseBloc>()) {
     serviceLocator.registerFactory<CategoryChooseBloc>(
       () =>

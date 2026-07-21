@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
 import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
+import 'package:inno_entry/src/app/bloc/dashboard/dashboard_bloc.dart';
+import 'package:inno_entry/src/app/view/widgets/delete_account_dialog.dart';
+import 'package:inno_entry/src/app/view/widgets/user_dashboard_account_menu.dart';
 import 'package:inno_entry/src/core/di/service_locator.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
@@ -12,30 +14,13 @@ import 'package:inno_entry/src/feature/category/presentation/bloc/category_choos
 import 'package:inno_entry/src/feature/category/presentation/widgets/category_choose_chip_row.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
-import 'package:inno_entry/src/app/view/widgets/delete_account_dialog.dart';
-import 'package:inno_entry/src/app/view/widgets/user_dashboard_account_menu.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_empty_feed.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_feed_list.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_filtering_bar.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_home_header.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_search_field.dart';
-import 'package:inno_entry/src/feature/entry/presentation/widgets/entry_delete_button.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_result.dart';
-
-typedef _HeaderSelection = ({
-  String accountName,
-  double monthAmount,
-  bool isSyncing,
-  DateTime? lastSyncedAt,
-});
-typedef _FeedSelection = ({
-  List<EntryBrief> entries,
-  String? errorMessage,
-  bool hasReachedMax,
-  bool isFiltering,
-  bool isLoading,
-  bool isPageLoading,
-});
+import 'package:inno_entry/src/feature/entry/presentation/widgets/entry_delete_button.dart';
 
 class UserDashboardView extends StatelessWidget {
   const UserDashboardView({super.key, required this.accountName});
@@ -48,19 +33,22 @@ class UserDashboardView extends StatelessWidget {
       key: ValueKey(accountName),
       providers: [
         BlocProvider(
+          create: (_) =>
+              serviceLocator<DashboardBloc>(param1: accountName)
+                ..add(const DashboardStarted()),
+        ),
+        BlocProvider(
           create: (_) => serviceLocator<EntryFeedBloc>(param1: accountName),
         ),
         BlocProvider(create: (_) => serviceLocator<CategoryChooseBloc>()),
       ],
-      child: _UserDashboardContent(accountName: accountName),
+      child: const _UserDashboardContent(),
     );
   }
 }
 
 class _UserDashboardContent extends StatefulWidget {
-  const _UserDashboardContent({required this.accountName});
-
-  final String accountName;
+  const _UserDashboardContent();
 
   @override
   State<_UserDashboardContent> createState() => _UserDashboardContentState();
@@ -69,7 +57,6 @@ class _UserDashboardContent extends StatefulWidget {
 class _UserDashboardContentState extends State<_UserDashboardContent> {
   late final TextEditingController _searchController;
   Timer? _searchDebounce;
-  bool _isAccountMenuOpen = false;
 
   @override
   void initState() {
@@ -86,40 +73,32 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<EntryFeedBloc, EntryFeedState>(
-      listenWhen: (previous, current) {
-        final hasNewError =
-            previous.errorMessage != current.errorMessage &&
-            current.errorMessage != null &&
-            current.entries.isNotEmpty;
-        final hasNewEffect =
-            previous.effect != current.effect && current.effect != null;
-        return hasNewError || hasNewEffect;
-      },
-      listener: (context, state) {
-        final effect = state.effect;
-        if (effect is EntryFeedSavedEffect) {
-          _showEntrySnackBar(context, message: 'Saved');
-          context.read<EntryFeedBloc>().add(const EntryFeedEffectHandled());
-          return;
-        }
-        if (effect is EntryFeedDeletedEffect) {
-          showEntryDeletedSnackBar(
-            context,
-            actionLabel: 'UNDO',
-            onActionPressed: () {
-              context.read<EntryFeedBloc>().add(
-                EntryFeedEntryDeleteUndone(effect.entry),
-              );
-            },
-          );
-          context.read<EntryFeedBloc>().add(const EntryFeedEffectHandled());
-          return;
-        }
-        final errorMessage = state.errorMessage;
-        if (errorMessage == null) return;
-        _showEntrySnackBar(context, message: errorMessage, isError: true);
-      },
+    return MultiBlocListener(
+      listeners: [
+        BlocListener<EntryFeedBloc, EntryFeedState>(
+          listenWhen: (previous, current) {
+            final hasNewError =
+                previous.errorMessage != current.errorMessage &&
+                current.errorMessage != null &&
+                current.entries.isNotEmpty;
+            final hasNewEffect =
+                previous.effect != current.effect && current.effect != null;
+            return hasNewError || hasNewEffect;
+          },
+          listener: _handleEntryFeedState,
+        ),
+        BlocListener<DashboardBloc, DashboardState>(
+          listenWhen: (previous, current) {
+            final hasNewError =
+                previous.errorMessage != current.errorMessage &&
+                current.errorMessage != null;
+            final hasNewEffect =
+                previous.effect != current.effect && current.effect != null;
+            return hasNewError || hasNewEffect;
+          },
+          listener: _handleDashboardState,
+        ),
+      ],
       child: Scaffold(
         body: SafeArea(
           child: Stack(
@@ -146,24 +125,34 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
                 ],
               ),
               _DashboardAddButton(onPressed: _openAddEntry),
-              if (_isAccountMenuOpen) ...[
-                Positioned.fill(
-                  top: 102,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _closeAccountMenu,
-                    child: const ColoredBox(color: Color(0x330E1919)),
-                  ),
+              Positioned.fill(
+                child: BlocSelector<DashboardBloc, DashboardState, bool>(
+                  selector: (state) => state.isAccountMenuOpen,
+                  builder: (context, isOpen) {
+                    if (!isOpen) return const SizedBox.shrink();
+                    return Stack(
+                      children: [
+                        Positioned.fill(
+                          top: 102,
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _closeAccountMenu,
+                            child: const ColoredBox(color: Color(0x330E1919)),
+                          ),
+                        ),
+                        Positioned(
+                          top: 108,
+                          right: 16,
+                          child: UserDashboardAccountMenu(
+                            onLogoutPressed: _handleLogoutPressed,
+                            onDeleteAccountPressed: _handleDeleteAccountPressed,
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                Positioned(
-                  top: 108,
-                  right: 16,
-                  child: UserDashboardAccountMenu(
-                    onLogoutPressed: _handleLogoutPressed,
-                    onDeleteAccountPressed: _handleDeleteAccountPressed,
-                  ),
-                ),
-              ],
+              ),
             ],
           ),
         ),
@@ -171,12 +160,66 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
     );
   }
 
+  void _handleEntryFeedState(BuildContext context, EntryFeedState state) {
+    final effect = state.effect;
+    if (effect is EntryFeedSavedEffect) {
+      _showEntrySnackBar(context, message: 'Saved');
+      context.read<EntryFeedBloc>().add(const EntryFeedEffectHandled());
+      context.read<DashboardBloc>().add(
+        const DashboardTotalsRefreshRequested(),
+      );
+      return;
+    }
+    if (effect is EntryFeedDeletedEffect) {
+      showEntryDeletedSnackBar(
+        context,
+        actionLabel: 'UNDO',
+        onActionPressed: () {
+          context.read<EntryFeedBloc>().add(
+            EntryFeedEntryDeleteUndone(effect.entry),
+          );
+          context.read<DashboardBloc>().add(
+            const DashboardTotalsRefreshRequested(),
+          );
+        },
+      );
+      context.read<EntryFeedBloc>().add(const EntryFeedEffectHandled());
+      context.read<DashboardBloc>().add(
+        const DashboardTotalsRefreshRequested(),
+      );
+      return;
+    }
+    final errorMessage = state.errorMessage;
+    if (errorMessage == null) return;
+    _showEntrySnackBar(context, message: errorMessage, isError: true);
+  }
+
+  void _handleDashboardState(BuildContext context, DashboardState state) {
+    final effect = state.effect;
+    if (effect is DashboardToggleThemeEffect) {
+      context.read<AppThemeCubit>().toggle();
+      context.read<DashboardBloc>().add(const DashboardEffectHandled());
+      return;
+    }
+    if (effect is DashboardConfirmDeleteAccountEffect) {
+      context.read<DashboardBloc>().add(const DashboardEffectHandled());
+      _showDeleteAccountDialog();
+      return;
+    }
+
+    final errorMessage = state.errorMessage;
+    if (errorMessage == null) return;
+    _showEntrySnackBar(context, message: errorMessage, isError: true);
+  }
+
   void _handleEntryDetailResult(EntryDetailResult? result) {
     if (result == null) return;
 
-    final bloc = context.read<EntryFeedBloc>()..add(const EntryFeedStarted());
+    final entryFeedBloc = context.read<EntryFeedBloc>()
+      ..add(const EntryFeedStarted());
+    context.read<DashboardBloc>().add(const DashboardTotalsRefreshRequested());
     if (result is EntryDetailSaved) {
-      bloc.add(const EntryFeedSaveConfirmed());
+      entryFeedBloc.add(const EntryFeedSaveConfirmed());
       return;
     }
 
@@ -187,6 +230,9 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
         onActionPressed: () {
           context.read<EntryFeedBloc>().add(
             EntryFeedEntryDeleteUndone(result.entry),
+          );
+          context.read<DashboardBloc>().add(
+            const DashboardTotalsRefreshRequested(),
           );
         },
       );
@@ -200,6 +246,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
     context.read<EntryFeedBloc>()
       ..add(const EntryFeedStarted())
       ..add(const EntryFeedSaveConfirmed());
+    context.read<DashboardBloc>().add(const DashboardTotalsRefreshRequested());
   }
 
   Future<void> _openEntry(EntryBrief entry) async {
@@ -224,34 +271,40 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
   }
 
   void _toggleAccountMenu() {
-    setState(() => _isAccountMenuOpen = !_isAccountMenuOpen);
+    context.read<DashboardBloc>().add(const DashboardAccountMenuToggled());
   }
 
   void _handleThemePressed() {
-    _closeAccountMenu();
-    context.read<AppThemeCubit>().toggle();
+    context.read<DashboardBloc>().add(const DashboardThemePressed());
   }
 
   void _closeAccountMenu() {
-    if (!_isAccountMenuOpen || !mounted) return;
-    setState(() => _isAccountMenuOpen = false);
+    if (!mounted) return;
+    context.read<DashboardBloc>().add(const DashboardAccountMenuClosed());
   }
 
-  Future<void> _handleLogoutPressed() async {
-    _closeAccountMenu();
-    await context.read<AppAuthUiController>().logout();
+  void _handleLogoutPressed() {
+    context.read<DashboardBloc>().add(const DashboardLogoutPressed());
   }
 
-  Future<void> _handleDeleteAccountPressed() async {
-    _closeAccountMenu();
+  void _handleDeleteAccountPressed() {
+    context.read<DashboardBloc>().add(const DashboardDeleteAccountPressed());
+  }
+
+  Future<void> _showDeleteAccountDialog() async {
+    final accountName = context.read<DashboardBloc>().state.accountName;
     final deleted = await showDialog<bool>(
       context: context,
       barrierColor: const Color(0x990E1919),
       builder: (context) {
         return DeleteAccountDialog(
-          accountName: widget.accountName,
+          accountName: accountName,
           onDeletePressed: () {
-            return context.read<AppAuthUiController>().deleteCurrentAccount();
+            final result = Completer<bool>();
+            this.context.read<DashboardBloc>().add(
+              DashboardDeleteAccountConfirmed(result),
+            );
+            return result.future;
           },
         );
       },
@@ -337,23 +390,15 @@ class _DashboardHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocSelector<EntryFeedBloc, EntryFeedState, _HeaderSelection>(
-      selector: (state) {
-        return (
-          accountName: state.accountName,
-          monthAmount: state.monthAmount,
-          isSyncing:
-              state.isLoading || state.isFiltering || state.isPageLoading,
-          lastSyncedAt: state.lastSyncedAt,
-        );
-      },
+    return BlocSelector<DashboardBloc, DashboardState, DashboardState>(
+      selector: (state) => state,
       builder: (context, state) {
         return SliverToBoxAdapter(
           child: EntryHomeHeader(
             accountName: state.accountName,
             monthAmount: state.monthAmount,
-            syncLabel: state.isSyncing ? 'syncing...' : 'synced just now',
-            isSyncing: state.isSyncing,
+            syncLabel: state.isSyncingTotals ? 'syncing...' : 'synced just now',
+            isSyncing: state.isSyncingTotals,
             lastSyncedAt: state.lastSyncedAt,
             onThemePressed: onThemePressed,
             onAccountPressed: onAccountPressed,
@@ -486,6 +531,15 @@ class _DashboardFeed extends StatelessWidget {
     );
   }
 }
+
+typedef _FeedSelection = ({
+  List<EntryBrief> entries,
+  String? errorMessage,
+  bool hasReachedMax,
+  bool isFiltering,
+  bool isLoading,
+  bool isPageLoading,
+});
 
 class _DashboardAddButton extends StatelessWidget {
   const _DashboardAddButton({required this.onPressed});
