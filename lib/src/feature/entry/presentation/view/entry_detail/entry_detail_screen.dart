@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inno_entry/src/di/service_locator.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
+import 'package:inno_entry/src/feature/entry/domain/usecases/entry_usecases.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_detail_bloc.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_result.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_view.dart';
@@ -29,12 +29,14 @@ class _EntryDetailScreenState extends State<EntryDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => serviceLocator<EntryDetailBloc>(
-        param1: EntryDetailBlocParams(
+      create: (context) => EntryDetailBloc(
+        params: EntryDetailBlocParams(
           accountName: widget.accountName,
           entryId: widget.entryId,
         ),
-      ),
+        getEntryDetails: context.read<GetEntryDetails>(),
+        deleteEntry: context.read<DeleteEntry>(),
+      )..add(const EntryDetailStarted()),
       child: BlocConsumer<EntryDetailBloc, EntryDetailState>(
         listenWhen: (previous, current) {
           final loaded = previous.entry == null && current.entry != null;
