@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'src/app/bloc/app_auth_ui_controller.dart';
 import 'src/app/bloc/app_theme_cubit.dart';
+import 'src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
 import 'src/core/di/service_locator.dart';
 import 'src/core/routing/app_router.dart';
 import 'src/core/theme/app_theme.dart';
-
-// final navigationKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,16 +16,15 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  static final _authController = serviceLocator<AppAuthUiController>();
+  static final _authGuardBloc = serviceLocator<AppAuthGuardBloc>();
   static final _appTheme = AppTheme();
-  static final _router = createAppRouter(authController: _authController);
+  static final _router = createAppRouter(authGuardBloc: _authGuardBloc);
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MultiBlocProvider(
       providers: [
-        BlocProvider.value(value: _authController),
+        BlocProvider.value(value: _authGuardBloc),
         BlocProvider.value(value: serviceLocator<AppThemeCubit>()),
       ],
       child: BlocBuilder<AppThemeCubit, ThemeMode>(

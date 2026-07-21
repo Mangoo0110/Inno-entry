@@ -1,7 +1,7 @@
-part of 'auth_bloc.dart';
+import 'package:inno_entry/src/feature/auth/domain/entities/auth_params.dart';
 
-final class _AuthFormParams implements AuthParams {
-  const _AuthFormParams({required this.accountName, required this.pin});
+final class AuthFormParams implements AuthParams {
+  const AuthFormParams({required this.accountName, required this.pin});
 
   @override
   final String accountName;
