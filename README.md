@@ -4,7 +4,7 @@ An offline expense track or recording application.
 
 
 
-Platforms:- Android, iOS and Web
+Platforms:- Android, iOS
 
 
 ## Tech Stack
