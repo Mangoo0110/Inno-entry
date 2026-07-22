@@ -74,17 +74,23 @@ class _UserDashboardContent extends StatefulWidget {
 
 class _UserDashboardContentState extends State<_UserDashboardContent> {
   late final TextEditingController _searchController;
-  Debouncer _searchDebounce = Debouncer(inMilliseconds: 350);
+  late final ScrollController _scrollController;
+  final Debouncer _searchDebounce = Debouncer(inMilliseconds: 350);
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _scrollController = ScrollController()..addListener(_onScroll);
+    _scheduleContentFillCheck();
   }
 
   @override
   void dispose() {
     _searchDebounce.dispose();
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -105,6 +111,16 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
           },
           listener: _handleEntryFeedState,
         ),
+        BlocListener<EntryFeedBloc, EntryFeedState>(
+          listenWhen: (previous, current) {
+            return previous.entries.length != current.entries.length ||
+                previous.isLoading != current.isLoading ||
+                previous.isPageLoading != current.isPageLoading ||
+                previous.hasReachedMax != current.hasReachedMax ||
+                previous.isFiltering != current.isFiltering;
+          },
+          listener: (context, state) => _scheduleContentFillCheck(),
+        ),
         BlocListener<DashboardBloc, DashboardState>(
           listenWhen: (previous, current) {
             final hasNewError =
@@ -122,6 +138,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
           child: Stack(
             children: [
               CustomScrollView(
+                controller: _scrollController,
                 slivers: [
                   _DashboardHeader(
                     onThemePressed: _handleThemePressed,
@@ -132,8 +149,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
                     searchController: _searchController,
                     onChanged: _scheduleSearch,
                     onSubmitted: (search) {
-                      
-                      _searchDebounce.run(()=> _submitSearch(search));
+                      _searchDebounce.run(() => _submitSearch(search));
                     },
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -176,6 +192,49 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
         ),
       ),
     );
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) {
+      _fetchNextPage();
+    }
+  }
+
+  void _scheduleContentFillCheck() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _checkIfContentFillsScreen();
+    });
+  }
+
+  void _checkIfContentFillsScreen() {
+    if (!_scrollController.hasClients) return;
+
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final feedState = context.read<EntryFeedBloc>().state;
+    if (maxScroll == 0.0 &&
+        !feedState.hasReachedMax &&
+        !feedState.isLoading &&
+        !feedState.isPageLoading &&
+        !feedState.isFiltering) {
+      _fetchNextPage();
+    }
+  }
+
+  void _fetchNextPage() {
+    final feedBloc = context.read<EntryFeedBloc>();
+    final feedState = feedBloc.state;
+    if (feedState.hasReachedMax ||
+        feedState.isLoading ||
+        feedState.isPageLoading ||
+        feedState.isFiltering) {
+      return;
+    }
+
+    feedBloc.add(const EntryFeedNextPageRequested());
   }
 
   void _handleEntryFeedState(BuildContext context, EntryFeedState state) {
@@ -277,7 +336,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
   }
 
   void _scheduleSearch(String search) {
-     _searchDebounce.run(()=> _submitSearch(search));
+    _searchDebounce.run(() => _submitSearch(search));
   }
 
   void _submitSearch(String search) {
@@ -533,13 +592,6 @@ class _DashboardFeed extends StatelessWidget {
           onDeleteEntry: (entry) {
             context.read<EntryFeedBloc>().add(EntryFeedEntryDeleted(entry));
           },
-          onLoadMore: state.isFiltering
-              ? null
-              : () {
-                  context.read<EntryFeedBloc>().add(
-                    const EntryFeedNextPageRequested(),
-                  );
-                },
         );
       },
     );
