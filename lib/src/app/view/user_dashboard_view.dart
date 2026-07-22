@@ -9,6 +9,7 @@ import 'package:inno_entry/src/app/view/widgets/delete_account_dialog.dart';
 import 'package:inno_entry/src/app/view/widgets/user_dashboard_account_menu.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
+import 'package:inno_entry/src/core/utils/utils.dart';
 import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
 import 'package:inno_entry/src/feature/category/domain/usecases/category_usecases.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/entry_usecases.dart';
@@ -73,7 +74,7 @@ class _UserDashboardContent extends StatefulWidget {
 
 class _UserDashboardContentState extends State<_UserDashboardContent> {
   late final TextEditingController _searchController;
-  Timer? _searchDebounce;
+  Debouncer _searchDebounce = Debouncer(inMilliseconds: 350);
 
   @override
   void initState() {
@@ -83,7 +84,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
+    _searchDebounce.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -131,8 +132,8 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
                     searchController: _searchController,
                     onChanged: _scheduleSearch,
                     onSubmitted: (search) {
-                      _searchDebounce?.cancel();
-                      _submitSearch(search);
+                      
+                      _searchDebounce.run(()=> _submitSearch(search));
                     },
                   ),
                   const SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -276,11 +277,7 @@ class _UserDashboardContentState extends State<_UserDashboardContent> {
   }
 
   void _scheduleSearch(String search) {
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      _submitSearch(search);
-    });
+     _searchDebounce.run(()=> _submitSearch(search));
   }
 
   void _submitSearch(String search) {
