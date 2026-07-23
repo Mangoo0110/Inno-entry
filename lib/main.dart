@@ -1,35 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'src/app/bloc/app_auth_ui_controller.dart';
 import 'src/app/bloc/app_theme_cubit.dart';
-import 'src/core/di/service_locator.dart';
 import 'src/core/routing/app_router.dart';
 import 'src/core/theme/app_theme.dart';
-
-// final navigationKey = GlobalKey<NavigatorState>();
+import 'src/di/app_dependencies.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await configureDependencies();
-  runApp(const MyApp());
+  final dependencies = await AppDependencies.create();
+  runApp(MyApp(dependencies: dependencies));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  MyApp({super.key, required this.dependencies});
 
-  static final _authController = serviceLocator<AppAuthUiController>();
-  static final _appTheme = AppTheme();
-  static final _router = createAppRouter(authController: _authController);
+  final AppDependencies dependencies;
+  final _appTheme = AppTheme();
+  late final _router = createAppRouter(
+    authGuardBloc: dependencies.authGuardBloc,
+  );
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider.value(value: _authController),
-        BlocProvider.value(value: serviceLocator<AppThemeCubit>()),
-      ],
+    return AppDependencyScope(
+      dependencies: dependencies,
       child: BlocBuilder<AppThemeCubit, ThemeMode>(
         builder: (context, themeMode) {
           return MaterialApp.router(

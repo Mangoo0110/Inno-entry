@@ -1,14 +1,13 @@
 import 'package:inno_entry/src/core/async_handlers/async_request.dart';
 import 'package:inno_entry/src/core/async_handlers/response.dart';
 import 'package:inno_entry/src/core/error_handler/error_handler.dart';
-import 'package:inno_entry/src/feature/category/data/model/entry_category_model.dart';
-import 'package:inno_entry/src/feature/category/domain/entities/entry_category.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/delete_all_entry.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/get_entry_total_amount_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
@@ -20,15 +19,6 @@ base class EntryRepoImpl with ErrorHandler implements EntryRepo {
   const EntryRepoImpl({required this.entryLocalDatasource});
 
   final EntryLocalDatasource entryLocalDatasource;
-
-  static const _entryCategories = [
-    EntryCategoryModel(name: 'All'),
-    EntryCategoryModel(name: 'Personal'),
-    EntryCategoryModel(name: 'Work'),
-    EntryCategoryModel(name: 'Bills'),
-    EntryCategoryModel(name: 'Food'),
-    EntryCategoryModel(name: 'Travel'),
-  ];
 
   @override
   AsyncRequest<Entry> addNewEntry({required NewEntryParams params}) {
@@ -87,10 +77,15 @@ base class EntryRepoImpl with ErrorHandler implements EntryRepo {
   }
 
   @override
-  AsyncRequest<List<EntryCategory>> getEntryCategories() {
+  AsyncRequest<double> getEntryTotalAmount({
+    required GetEntryTotalAmountParams params,
+  }) {
     return asyncTryCatch(
       tryFunc: () async {
-        return const SuccessRepoCall(data: _entryCategories);
+        final totalAmount = await entryLocalDatasource.getEntryTotalAmount(
+          params: params,
+        );
+        return SuccessRepoCall(data: totalAmount);
       },
     );
   }

@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_bloc.dart';
+import 'package:inno_entry/src/feature/auth/presentation/bloc/login/login_bloc.dart';
+import 'package:inno_entry/src/feature/auth/presentation/bloc/register/register_bloc.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/auth_icon.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/auth_page_frame.dart';
 import 'package:inno_entry/src/feature/auth/presentation/widgets/primary_action_button.dart';
 
 class WelcomeView extends StatelessWidget {
-  const WelcomeView({super.key, required this.state});
-
-  final AuthUiState state;
+  const WelcomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.context(context);
 
     return AuthPageFrame(
-      key: const ValueKey(AuthView.welcome),
+      key: const ValueKey(AppRoutes.auth),
       topSpacing: 110,
       children: [
         const AuthIcon(icon: Icons.edit_note_rounded),
@@ -43,9 +44,10 @@ class WelcomeView extends StatelessWidget {
         const SizedBox(height: 50),
         PrimaryActionButton(
           label: 'Log in',
-          isProcessing: state.isSubmitting,
+          isProcessing: false,
           onPressed: () {
-            context.read<AuthBloc>().add(const AuthLoginSelected());
+            context.read<LoginBloc>().add(const LoginReset());
+            context.go(AppRoutes.authLogin);
           },
         ),
         const SizedBox(height: 12),
@@ -53,13 +55,10 @@ class WelcomeView extends StatelessWidget {
           width: double.infinity,
           height: 60,
           child: OutlinedButton(
-            onPressed: state.isSubmitting
-                ? null
-                : () {
-                    context.read<AuthBloc>().add(
-                      const AuthCreateAccountSelected(),
-                    );
-                  },
+            onPressed: () {
+              context.read<RegisterBloc>().add(const RegisterReset());
+              context.go(AppRoutes.authRegister);
+            },
             child: const Text('Sign up'),
           ),
         ),

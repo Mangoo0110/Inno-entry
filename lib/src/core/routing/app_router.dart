@@ -1,28 +1,31 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
-import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
-import 'package:inno_entry/src/core/di/service_locator.dart';
+import 'package:inno_entry/src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
+import 'package:inno_entry/src/app/view/user_dashboard_view.dart';
 import 'package:inno_entry/src/core/routing/app_routes.dart';
 import 'package:inno_entry/src/core/routing/auth_route_gate.dart';
 import 'package:inno_entry/src/core/routing/go_router_refresh_stream.dart';
-import 'package:inno_entry/src/feature/auth/presentation/screens/auth_screen.dart';
 import 'package:inno_entry/src/feature/auth/domain/entities/auth_status.dart';
-import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_feed_bloc.dart';
-import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/user_dashboard_view.dart';
-import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_result.dart';
+import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
+import 'package:inno_entry/src/feature/auth/presentation/bloc/login/login_bloc.dart';
+import 'package:inno_entry/src/feature/auth/presentation/bloc/register/register_bloc.dart';
+import 'package:inno_entry/src/feature/auth/presentation/screens/auth_shell.dart';
+import 'package:inno_entry/src/feature/auth/presentation/screens/views/create_account_view.dart';
+import 'package:inno_entry/src/feature/auth/presentation/screens/views/login_name_view.dart';
+import 'package:inno_entry/src/feature/auth/presentation/screens/views/pin_unlock_view.dart';
+import 'package:inno_entry/src/feature/auth/presentation/screens/views/welcome_view.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_detail/entry_detail_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_screen.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_view.dart';
 
-GoRouter createAppRouter({required AppAuthUiController authController}) {
+GoRouter createAppRouter({required AppAuthGuardBloc authGuardBloc}) {
   return GoRouter(
     initialLocation: AppRoutes.auth,
-    refreshListenable: GoRouterRefreshStream(authController.stream),
+    refreshListenable: GoRouterRefreshStream(authGuardBloc.stream),
     redirect: (context, state) {
-      final authStatus = authController.state;
-      final isAuthRoute = state.uri.path == AppRoutes.auth;
+      final authStatus = authGuardBloc.state;
+      final isAuthRoute = AppRoutes.isAuthRoute(state.uri.path);
 
       return switch (authStatus) {
         LoadingAuthSignature() => null,
@@ -32,18 +35,73 @@ GoRouter createAppRouter({required AppAuthUiController authController}) {
       };
     },
     routes: [
-      GoRoute(
-        path: AppRoutes.auth,
-        name: 'auth',
-        pageBuilder: (context, state) {
-          return NoTransitionPage(
-            key: state.pageKey,
+      ShellRoute(
+        builder: (context, state, child) {
+          return MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => LoginBloc(
+                  isAccountNameAvailable: context
+                      .read<IsAccountNameAvailable>(),
+                  unlockAccount: context.read<UnlockAccount>(),
+                ),
+              ),
+              BlocProvider(
+                create: (_) => RegisterBloc(
+                  isAccountNameAvailable: context
+                      .read<IsAccountNameAvailable>(),
+                  createAccount: context.read<CreateAccount>(),
+                ),
+              ),
+            ],
             child: AuthRouteGate(
               policy: AuthRoutePolicy.guestOnly,
-              child: const AuthScreen(),
+              child: AuthShell(routePath: state.uri.path, child: child),
             ),
           );
         },
+        routes: [
+          GoRoute(
+            path: AppRoutes.auth,
+            name: 'auth',
+            pageBuilder: (context, state) {
+              return NoTransitionPage(
+                key: state.pageKey,
+                child: const WelcomeView(),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoutes.authLogin,
+            name: 'auth-login',
+            pageBuilder: (context, state) {
+              return NoTransitionPage(
+                key: state.pageKey,
+                child: const LoginNameView(),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoutes.authPin,
+            name: 'auth-pin',
+            pageBuilder: (context, state) {
+              return NoTransitionPage(
+                key: state.pageKey,
+                child: const PinUnlockView(),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoutes.authRegister,
+            name: 'auth-register',
+            pageBuilder: (context, state) {
+              return NoTransitionPage(
+                key: state.pageKey,
+                child: const CreateAccountView(),
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: AppRoutes.entryFeed,
@@ -55,30 +113,7 @@ GoRouter createAppRouter({required AppAuthUiController authController}) {
               policy: AuthRoutePolicy.signedInOnly,
               child: AuthenticatedAccountRoute(
                 builder: (context, accountName) {
-                  return UserDashboardView(
-                    accountName: accountName,
-                    createBloc: (accountName) =>
-                        serviceLocator<EntryFeedBloc>(param1: accountName),
-                    onAddEntryPressed: () {
-                      return context.push<bool>(AppRoutes.entryForm);
-                    },
-                    onEntryPressed: (entry) {
-                      return context.push<EntryDetailResult>(
-                        '${AppRoutes.entryDetail}?entryId=${entry.uId.uId}',
-                      );
-                    },
-                    onLogoutPressed: () {
-                      return context.read<AppAuthUiController>().logout();
-                    },
-                    onDeleteAccountPressed: () {
-                      return context
-                          .read<AppAuthUiController>()
-                          .deleteCurrentAccount();
-                    },
-                    onThemePressed: () {
-                      context.read<AppThemeCubit>().toggle();
-                    },
-                  );
+                  return UserDashboardView(accountName: accountName);
                 },
               ),
             ),
