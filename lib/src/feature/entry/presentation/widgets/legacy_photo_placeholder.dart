@@ -45,6 +45,8 @@ class _LegacyPhotoPlaceholderPainter extends CustomPainter {
       ..color = stripeColor
       ..strokeWidth = 5
       ..style = PaintingStyle.stroke;
+    
+    size = Size(size.width + 2, size.height+ 2);
 
     for (var x = -size.height; x < size.width; x += gap) {
       canvas.drawLine(

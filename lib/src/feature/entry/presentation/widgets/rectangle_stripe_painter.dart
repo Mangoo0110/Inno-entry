@@ -1,4 +1,6 @@
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class StripeCoordinates {
@@ -48,32 +50,24 @@ class RectangleStripePainter extends CustomPainter {
 
   static List<StripeCoordinates> stripes({required Size size, required double gap}) {
     List<StripeCoordinates> coordinates = [];
-    size = Size(size.width, size.height);
+    size = Size(size.width + gap, size.height + gap);
 
     Offset top = Offset(size.width, size.height); // bottom right
     Offset bottom = Offset(size.width, size.height); // bottom right
-    
-    top = Offset(top.dx - (top.dy <= - bottom.dy % gap ? gap : 0.0),  top.dy - (top.dy > - bottom.dy % gap ? gap : 0.0));
-    bottom = Offset(bottom.dx - ((bottom.dx >  -bottom.dx % gap) ? gap : 0),  bottom.dy - (bottom.dx <=  -bottom.dx % gap ? gap : 0));
-    
-    // Slope
-    double m = (top.dy - bottom.dy) / (top.dx - bottom.dx);
-    debugPrint(m.toString());
-    top = Offset(top.dx - (8/m), top.dy - 8);
-    bottom = Offset(bottom.dx + (8/m), bottom.dy + 8);
-
-    int totalStripes = (size.width / gap).ceil() * 2 ;
+ 
+    debugPrint("mmm");
+    int totalStripes = (max(size.height, size.width) / gap).ceil() * 2 ;
     while(totalStripes >= 0) {
       debugPrint(
         ''' 
         $top,
         $bottom
         '''
-      );
+      ); 
       coordinates.add(StripeCoordinates(top: top, bottom: bottom));
       // Calculate next positions
-      top = Offset(top.dx - (top.dy <= - bottom.dy % gap ? gap : 0.0),  top.dy - (top.dy > - bottom.dy % gap ? gap : 0.0));
-      bottom = Offset(bottom.dx - ((bottom.dx >  -bottom.dx % gap) ? gap : 0),  bottom.dy - (bottom.dx <=  -bottom.dx % gap ? gap : 0));
+      top = Offset(top.dx - (top.dy < - bottom.dy % gap ? gap : 0.0),  top.dy - (top.dy >= - bottom.dy % gap ? gap : 0.0));
+      bottom = Offset(bottom.dx - ((bottom.dx >=  -bottom.dx % gap) ? gap : 0),  bottom.dy - (bottom.dx <  -bottom.dx % gap ? gap : 0));
       totalStripes--;
     }
 
