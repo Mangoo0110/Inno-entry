@@ -10,6 +10,16 @@ class StripeCoordinates {
   StripeCoordinates({required this.top, required this.bottom});
 
   @override
+  bool operator ==(Object other) {
+    return other is StripeCoordinates &&
+      top == other.top &&
+      bottom == other.bottom;
+  }
+
+  @override
+  int get hashCode => top.hashCode ^ bottom.hashCode;
+
+  @override
   String toString() {
     return ''' 
     top: $top,
@@ -58,16 +68,10 @@ class RectangleStripePainter extends CustomPainter {
     debugPrint("mmm");
     int totalStripes = (max(size.height, size.width) / gap).ceil() * 2 ;
     while(totalStripes >= 0) {
-      debugPrint(
-        ''' 
-        $top,
-        $bottom
-        '''
-      ); 
-      coordinates.add(StripeCoordinates(top: top, bottom: bottom));
-      // Calculate next positions
+      // Calculate positions
       top = Offset(top.dx - (top.dy < - bottom.dy % gap ? gap : 0.0),  top.dy - (top.dy >= - bottom.dy % gap ? gap : 0.0));
       bottom = Offset(bottom.dx - ((bottom.dx >=  -bottom.dx % gap) ? gap : 0),  bottom.dy - (bottom.dx <  -bottom.dx % gap ? gap : 0));
+      coordinates.add(StripeCoordinates(top: top, bottom: bottom));
       totalStripes--;
     }
 
