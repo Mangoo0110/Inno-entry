@@ -5,7 +5,7 @@ import 'package:inno_entry/src/feature/entry/presentation/widgets/legacy_photo_p
 import 'package:inno_entry/src/feature/entry/presentation/widgets/photo_placeholder.dart';
 import 'package:inno_entry/src/previews/entry_dashboard_preview_data.dart';
 
-@Preview(name: 'Photo placeholder comparison', size: Size(360, 220))
+@Preview(name: 'Photo placeholder comparison', size: Size(1000, 220))
 Widget photoPlaceholderComparisonPreview() {
   return const EntryPreviewFrame(
     width: 320,
@@ -16,12 +16,12 @@ Widget photoPlaceholderComparisonPreview() {
 @Preview(
   name: 'Photo placeholder comparison - dark',
   brightness: Brightness.dark,
-  size: Size(360, 220),
+  size: Size(1000, 400),
 )
 Widget photoPlaceholderComparisonDarkPreview() {
   return const EntryPreviewFrame(
     brightness: Brightness.dark,
-    width: 320,
+    width: 1000,
     child: _PhotoPlaceholderComparison(),
   );
 }
@@ -34,7 +34,8 @@ class _PhotoPlaceholderComparison extends StatelessWidget {
     final colors = AppColors.context(context);
 
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      spacing: 8,
       children: [
         _PlaceholderSample(
           label: 'Legacy',
@@ -74,7 +75,7 @@ class _PlaceholderSample extends StatelessWidget {
         ClipRRect(
           //clipBehavior: Clip.none ,
           borderRadius: BorderRadius.circular(10),
-          child: SizedBox(width: 144, height: 144, child: child),
+          child: SizedBox(width: 200, height: 30, child: child),
         ),
       ],
     );
