@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'src/app/bloc/app_theme_cubit.dart';
-import 'src/core/routing/app_router.dart';
+import 'src/app/routing/app_router.dart';
 import 'src/core/theme/app_theme.dart';
 import 'src/di/app_dependencies.dart';
 
