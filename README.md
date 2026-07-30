@@ -1,22 +1,34 @@
+# InnoEntry
 
-# Inno_Entry
-An offline expense track or recording application.
+Offline expense track or recording application. All data stays at client's device. Never shared with any kind of providers or outsiders!
 
 
+Platforms: Android and iOS. iOS has not been fully tested.
 
-Platforms:- Android, iOS and Web
+## Features
 
+- Local account creation and PIN unlock
+- Account-scoped entry feed
+- Search and category filtering
+- Paginated infinite scroll
+- Add and edit entries
+- Entry detail view
+- Delete entry with undo
+- Delete current account with its entries
+- Optional local photo attachment
+- Runtime light and dark theme
+- Total amount summary
 
 ## Tech Stack
 
 - Flutter and Dart
-- `flutter_bloc` for app, auth, feed, form, and detail state
-- `go_router` for routing
+- `flutter_bloc` for presentation state
+- `go_router` for routing and auth guards
 - `sqflite` for local entry storage
-- `flutter_secure_storage` for local account/PIN data
-- `image_picker` for optional local photo attachments
-- `get_it` for dependency registration
-- `freezed` and `json_serializable` for generated data models
+- `flutter_secure_storage` for local account and PIN-related data
+- `image_picker` for optional photo attachments
+- `RepositoryProvider` and `BlocProvider` for dependency injection
+- `json_serializable` for data model mapping helpers
 
 ## Build And Run
 
@@ -26,173 +38,133 @@ Install dependencies:
 flutter pub get
 ```
 
-Regenerate generated files after changing Freezed/JSON models:
+Regenerate generated files after changing generated models:
 
 ```sh
 dart run build_runner build --delete-conflicting-outputs
 ```
 
-Run on iOS:
-
-```sh
-flutter run -d ios
-```
-
-Run on Android:
+Run the app:
 
 ```sh
 flutter run -d android
 ```
 
-Run on web for a quick local smoke check:
+Run analysis and tests:
 
 ```sh
-flutter run -d chrome
-```
-
-Run static analysis:
-
-```sh
-flutter analyze
-```
-
-Run tests:
-
-```sh
+dart analyze
 flutter test
 ```
 
-## Project Layout
+This is a Flutter app, so use `flutter run` instead of `dart run` to launch the UI.
 
-The code is organized by feature, with shared infrastructure under `core`.
+## Project Structure
+
+The code is organized feature-first so a reviewer can inspect one feature without jumping across unrelated folders.
 
 - `lib/src/app`
-  - App-level session controller and splash view.
-  - `AppAuthUiController` watches the current auth status and exposes app-level actions such as logout and account deletion.
+  - App routing, auth guard, dashboard shell, theme cubit, and shared app widgets.
 
 - `lib/src/core`
-  - Routing, dependency injection, theme, constants, async response wrappers, error handling, helper utilities, and reusable widgets.
+  - Shared theme, constants, response wrappers, error handling, debug helpers, and utilities.
+
+- `lib/src/di`
+  - App dependency creation and provider setup.
 
 - `lib/src/feature/auth`
-  - Local account creation, login, PIN unlock, logout, and account selection.
-  - Secure-storage-backed datasource, auth repository, auth use cases, `AuthBloc`, and auth screens/widgets.
+  - Local account creation, login, PIN unlock, secure-storage datasource, repository, use cases, blocs, and UI.
 
 - `lib/src/feature/entry`
-  - Entry feed, add/edit form, entry detail screen, local persistence, domain entities, params, repositories, and use cases.
-  - Feed, form, and detail state are separated into their own BLoCs.
+  - Entry feed, add/edit form, detail screen, sqflite datasource, repository, use cases, blocs, and UI.
 
 - `lib/src/feature/category`
-  - Category entity/model support used by the feed filters and entry form.
+  - Static category source, category use case, bloc, and category chip widgets.
 
 - `lib/src/previews`
-  - Small widget preview fixtures for focused UI iteration.
+  - Small widget previews for focused UI checks.
 
-## How The App Fits Together
+## App Flow
 
-1. `main.dart` configures dependencies, creates `AppAuthUiController`, and starts `MaterialApp.router`.
-2. `AuthRouteGate` listens to app auth state and keeps signed-in routes and guest routes separated.
-3. Once authenticated, `AuthenticatedAccountRoute` passes the active account name into entry screens.
-4. Entry use cases always receive the active account owner, so feed queries and mutations stay account-scoped.
-5. Auth data lives in secure storage. Entry data lives in the local sqflite database.
-6. UI widgets render BLoC/Cubit state and send user intents back through events or controller methods.
+1. `main.dart` creates `AppDependencies`.
+2. `AppDependencyScope` exposes repositories, use cases, and app-wide blocs to the widget tree.
+3. `AppAuthGuardBloc` watches auth status from local storage.
+4. `go_router` uses that auth state to separate guest routes from signed-in routes.
+5. `AuthShell` keeps login and register blocs alive across the auth flow.
+6. After login, the active account name is passed into dashboard and entry screens.
+7. Entry operations receive the active account owner, so local data stays account-scoped.
+
+## Architecture
+
+The app follows a simple layered structure.
+
+Presentation:
+- Widgets render state and send user actions to blocs.
+- BLoCs own loading, validation, selected filters, pagination, and one-shot UI effects.
+- Screen or route-specific blocs are created near the UI scope that owns them.
+
+Domain:
+- Use cases describe app actions such as login, create entry, delete entry, and get total amount.
+- Params describe use-case input without exposing sqflite row shape.
+- Entities represent the data used by the app and UI.
+
+Data:
+- Datasources own local storage details.
+- Repositories connect use cases with datasources.
+- Models own conversion to and from database maps.
+
+Dependency setup:
+- `AppDependencies` creates datasources, repositories, use cases, and app-wide blocs.
+- `AppDependencyScope` exposes them with providers.
+- This keeps dependency setup visible near the app root.
+
+## Main State Owners
+
+- `AppAuthGuardBloc`: auth status for route decisions
+- `AppThemeCubit`: runtime theme mode
+- `DashboardBloc`: dashboard actions, account menu, logout, delete account, and totals
+- `LoginBloc`: account lookup, selected account, PIN input, and unlock state
+- `RegisterBloc`: account creation state
+- `CategoryChooseBloc`: category loading for chip rows
+- `EntryFeedBloc`: feed loading, search, filter, pagination, delete, and undo
+- `EntryFormBloc`: add/edit form state, validation, totals, category, save, and photo path
+- `EntryDetailBloc`: detail loading, refresh after edit, and delete state
 
 ## Entry Model
 
-The app intentionally uses one entry model/table rather than separate models for notes, tasks, and expenses.
+The app uses one entry table for expenses, notes, and tasks. This keeps the local schema small while still supporting the required screens.
 
 Important fields:
+
 - `id`: local primary key
-- `owner`: active account name used for account scoping
-- `title`: required display title
-- `note`: long-form text
+- `owner`: account name used for data scoping
+- `title`: display title
+- `note`: longer text
 - `amount`: optional expense value
-- `category`: feed/form category
+- `category`: category name
 - `done`: task done or expense paid state
 - `photoPath`: optional local image path
-- `createdAt` and `updatedAt`: local timestamps
+- `createdAt` and `updatedAt`: timestamps
 
-The UI interprets the entry based on populated fields. For example, an entry with an `amount` behaves like an expense, while an entry without one can still work as a note or task.
+An entry with an amount can behave like an expense. An entry without an amount can still work as a note or task.
 
-## State Ownership
+## Data Decisions
 
-Main state owners:
+Auth data is stored with secure storage. Entry data is stored with sqflite.
 
-- `AppAuthUiController`
-  - Current session/auth status.
-  - App-level auth actions such as logout and delete account.
+The local datasource uses typed data models instead of raw JSON-like payloads. sqflite rows are maps internally, but model methods own conversion to and from database maps.
 
-- `AuthBloc`
-  - Auth screen flow.
-  - Account lookup, account creation, PIN input, unlock state, and auth form errors.
-
-- `EntryFeedBloc`
-  - Feed bootstrap, category filters, search, pagination, delete behavior, sync-label source data, and one-shot feed effects.
-
-- `EntryFormBloc`
-  - Add/edit form state, field changes, validation, save state, and photo path.
-
-- `EntryDetailBloc`
-  - Detail loading, delete state, and detail-level effects.
-
-The intended pattern is that widgets stay thin: they render semantic state and send user actions back to the relevant BLoC or controller. Business decisions and async behavior should stay out of UI widgets.
-Used practices:: https://bloclibrary.dev/cs/flutter-bloc-concepts/
-
-https://bloclibrary.dev/fr/tutorials/flutter-infinite-list/
-
-## Feature Walkthrough
-
-Local auth:
-- New users can create a local account with a name and PIN.
-- Existing users can unlock a local account by name and PIN.
-- Logging out clears only the active session reference; the account and entries remain available for later login.
-- Deleting the current account removes that account's local entries and auth record without affecting other accounts.
-
-Feed:
-- The feed shows the active account's entries only.
-- The header includes account context, live balance, and a local freshness label.
-- Category filters and search update the list.
-- Entries can be paginated and deleted from the feed.
-
-Add/edit:
-- One form handles both new and existing entries.
-- The same entry can carry note, task, and expense data.
-- Optional photo paths are stored locally.
-- Save actions return to the feed and emit a single confirmation effect.
-
-Entry detail:
-- Tapping an entry opens a detail view.
-- The detail view can navigate to edit or delete the entry.
-
-## Data Layer Notes
-
-The local datasource is typed around data models instead of generic map payloads. sqflite rows are still maps internally, but conversion is owned by model methods such as `toDb()` and `fromDb()`.
-
-This keeps the repository and domain layers easier to refactor:
-- Datasources handle local persistence details.
-- Repositories translate between use-case params and data operations.
-- Domain entities and use cases stay independent from sqflite row shape.
+Typed models keep the local persistence code easier to inspect and refactor.
 
 
-Also for theme preference we are not storing this with the shared_preference due to time limit. This is only app runtime state!!
+## Known Trade-Offs
 
+- Categories are static and come from the category repository implementation.
+- The entry table stores the selected category name, not a category relation.
+- Theme preference is runtime-only and is not persisted yet.
+- iOS is listed as a target but was not fully tested.
 
+## References
 
-
-
-### Data layer trade-off
-
-The local datasource is intentionally typed around app data models instead of raw
-JSON-like maps. Although a backend-style service might receive and return generic
-payloads, this app is fully offline and uses sqflite directly, where rows are
-already represented as `Map<String, Object?>`.
-
-To keep the code safer and easier to refactor, the datasource accepts and returns
-data-layer models such as `EntryModel` and `EntryBriefModel`. These models own the
-conversion to and from database row maps through `toDb()` and `fromDb()` methods.
-The repository remains responsible for translating domain use-case params into
-data models before calling the datasource.
-
-# UI + Domain + Data layer trade off
-Right now total amount is the total of all the entries with the amount. Which is not right. 
-Domain layer should have a clear contract to get this information from the datasource or the source of truth.
-Domain layer should return a sum or total with rspond to filters like date, search, categories. And UI or UI-controller or, in this case bloc can decide what type of combination total amount result it wants to show to the user.
+- BLoC concepts: https://bloclibrary.dev/cs/flutter-bloc-concepts/
+- Infinite list pattern: https://bloclibrary.dev/fr/tutorials/flutter-infinite-list/
