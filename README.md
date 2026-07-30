@@ -1,23 +1,10 @@
 # InnoEntry
 
-Offline expense track or recording application. All data stays at client's device. Never shared with any kind of providers or outsiders!
+An offline expense tracking and entry recording app. All data stays on the user's device and is not shared with any external provider.
 
 
 Platforms: Android and iOS. iOS has not been fully tested.
 
-## Features
-
-- Local account creation and PIN unlock
-- Account-scoped entry feed
-- Search and category filtering
-- Paginated infinite scroll
-- Add and edit entries
-- Entry detail view
-- Delete entry with undo
-- Delete current account with its entries
-- Optional local photo attachment
-- Runtime light and dark theme
-- Total amount summary
 
 ## Tech Stack
 
@@ -84,7 +71,7 @@ The code is organized feature-first so a reviewer can inspect one feature withou
 - `lib/src/previews`
   - Small widget previews for focused UI checks.
 
-## App Flow
+## How The App Fits Together
 
 1. `main.dart` creates `AppDependencies`.
 2. `AppDependencyScope` exposes repositories, use cases, and app-wide blocs to the widget tree.
@@ -130,6 +117,29 @@ Dependency setup:
 - `EntryFormBloc`: add/edit form state, validation, totals, category, save, and photo path
 - `EntryDetailBloc`: detail loading, refresh after edit, and delete state
 
+## Feature Walkthrough
+
+Local auth:
+- New users can create a local account with a name and PIN.
+- Existing users can unlock a local account by name and PIN.
+- Logging out clears only the active session reference; the account and entries remain available for later login.
+- Deleting the current account removes that account's local entries and auth record without affecting other accounts.
+
+Feed:
+- The feed shows only the active account's entries.
+- Search and category filters update the list.
+- Entries are paginated and can be deleted from the feed.
+- Deleted entries can be restored from the undo action.
+
+Add/edit:
+- One form handles both new and existing entries.
+- The same entry can carry note, task, and expense data.
+- Optional photo paths are stored locally.
+- Save actions return to the feed and show a confirmation effect.
+
+Entry detail:
+- Tapping an entry opens a detail view.
+- The detail view can navigate to edit or delete the entry.
 ## Entry Model
 
 The app uses one entry table for expenses, notes, and tasks. This keeps the local schema small while still supporting the required screens.
