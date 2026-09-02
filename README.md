@@ -4,7 +4,7 @@ An offline expense track or recording application.
 
 
 
-Platforms:- Android, iOS and Web
+Platforms:- Android, iOS(Not tested)
 
 
 ## Tech Stack
@@ -42,12 +42,6 @@ Run on Android:
 
 ```sh
 flutter run -d android
-```
-
-Run on web for a quick local smoke check:
-
-```sh
-flutter run -d chrome
 ```
 
 Run static analysis:
@@ -177,7 +171,7 @@ Also for theme preference we are not storing this with the shared_preference due
 
 
 
-
+# Trade-Offs
 
 ### Data layer trade-off
 
@@ -192,7 +186,10 @@ conversion to and from database row maps through `toDb()` and `fromDb()` methods
 The repository remains responsible for translating domain use-case params into
 data models before calling the datasource.
 
-# UI + Domain + Data layer trade off
+### UI + Domain + Data layer trade off
 Right now total amount is the total of all the entries with the amount. Which is not right. 
 Domain layer should have a clear contract to get this information from the datasource or the source of truth.
 Domain layer should return a sum or total with rspond to filters like date, search, categories. And UI or UI-controller or, in this case bloc can decide what type of combination total amount result it wants to show to the user.
+
+Categories are also not stored in or provided from the sqflite database. They are static or hard coded for the moment. However follows architecture decisions and data provided by the repo implementor!
+There is a small dependency on the category in the entry feature, showing category chips to select for filtering and entry form. This is now overlooked for the time limitations.
