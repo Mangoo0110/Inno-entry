@@ -85,6 +85,15 @@ final class EntryPreviewBrief implements EntryBrief {
   final DateTime updatedAt;
 }
 
+const entryPreviewCategoryNames = [
+  'All',
+  'Personal',
+  'Work',
+  'Bills',
+  'Food',
+  'Travel',
+];
+
 const entryPreviewCategories = [
   EntryPreviewCategory('All'),
   EntryPreviewCategory('Personal'),

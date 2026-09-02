@@ -6,6 +6,7 @@ class AuthPageFrame extends StatelessWidget {
     super.key,
     required this.children,
     this.headerTitle,
+    this.onBackPressed,
     this.bottomChild,
     this.maxWidth = 340,
     this.topSpacing = 60,
@@ -13,6 +14,7 @@ class AuthPageFrame extends StatelessWidget {
 
   final List<Widget> children;
   final String? headerTitle;
+  final VoidCallback? onBackPressed;
   final Widget? bottomChild;
   final double maxWidth;
   final double topSpacing;
@@ -74,7 +76,10 @@ class AuthPageFrame extends StatelessWidget {
                 top: 16,
                 left: 0,
                 right: 0,
-                child: AuthHeader(title: headerTitle!),
+                child: AuthHeader(
+                  title: headerTitle!,
+                  onBackPressed: onBackPressed,
+                ),
               ),
           ],
         );

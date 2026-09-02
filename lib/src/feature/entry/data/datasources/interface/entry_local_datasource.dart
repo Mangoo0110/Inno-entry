@@ -4,6 +4,7 @@ import 'package:inno_entry/src/feature/entry/domain/params/delete_all_entry.dart
 import 'package:inno_entry/src/feature/entry/domain/params/delete_entry_param.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entries_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/get_entry_details_params.dart';
+import 'package:inno_entry/src/feature/entry/domain/params/get_entry_total_amount_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/new_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/restore_deleted_entry_params.dart';
 import 'package:inno_entry/src/feature/entry/domain/params/update_entry_params.dart';
@@ -28,4 +29,8 @@ abstract interface class EntryLocalDatasource {
   Future<EntryModel> getEntryDetails({required GetEntryDetailsParams params});
 
   Future<List<EntryBriefModel>> getEntries({required GetEntriesParams params});
+
+  Future<double> getEntryTotalAmount({
+    required GetEntryTotalAmountParams params,
+  });
 }
