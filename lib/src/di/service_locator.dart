@@ -1,12 +1,16 @@
 import 'package:get_it/get_it.dart';
-import 'package:inno_entry/src/app/bloc/app_auth_ui_controller.dart';
+import 'package:inno_entry/src/app/bloc/auth_guard/app_auth_guard_bloc.dart';
+import 'package:inno_entry/src/app/bloc/dashboard/dashboard_bloc.dart';
 import 'package:inno_entry/src/app/bloc/app_theme_cubit.dart';
+import 'package:inno_entry/src/feature/category/data/repo/category_repo_impl.dart';
+import 'package:inno_entry/src/feature/category/domain/repo/category_repo.dart';
+import 'package:inno_entry/src/feature/category/domain/usecases/category_usecases.dart';
+import 'package:inno_entry/src/feature/category/presentation/bloc/category_choose_bloc.dart';
 import 'package:inno_entry/src/feature/auth/data/datasources/auth_storage.dart';
 import 'package:inno_entry/src/feature/auth/data/datasources/interface/auth_datasources.dart';
 import 'package:inno_entry/src/feature/auth/data/repo/auth_repo_impl.dart';
 import 'package:inno_entry/src/feature/auth/domain/repo/auth_repo.dart';
 import 'package:inno_entry/src/feature/auth/domain/usecases/auth_usecases.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_bloc.dart';
 import 'package:inno_entry/src/feature/entry/data/datasources/entry_storage.dart';
 import 'package:inno_entry/src/feature/entry/data/datasources/interface/entry_datasources.dart';
 import 'package:inno_entry/src/feature/entry/data/repo/entry_repo_impl.dart';
@@ -44,6 +48,10 @@ Future<void> configureDependencies({
       () => AuthRepoImpl(authLocalDatasource: serviceLocator()),
     );
   }
+  if (!serviceLocator.isRegistered<CategoryRepo>()) {
+    serviceLocator.registerLazySingleton<CategoryRepo>(CategoryRepoImpl.new);
+  }
+
   if (!serviceLocator.isRegistered<EntryRepo>()) {
     serviceLocator.registerLazySingleton<EntryRepo>(
       () => EntryRepoImpl(entryLocalDatasource: serviceLocator()),
@@ -71,10 +79,11 @@ Future<void> configureDependencies({
     () => LoginWithExistingAccount(serviceLocator()),
   );
 
-  _registerFactoryIfAbsent<GetEntries>(() => GetEntries(serviceLocator()));
   _registerFactoryIfAbsent<GetEntryCategories>(
     () => GetEntryCategories(serviceLocator()),
   );
+
+  _registerFactoryIfAbsent<GetEntries>(() => GetEntries(serviceLocator()));
   _registerFactoryIfAbsent<AddNewEntry>(() => AddNewEntry(serviceLocator()));
   _registerFactoryIfAbsent<DeleteEntry>(() => DeleteEntry(serviceLocator()));
   _registerFactoryIfAbsent<DeleteAllEntry>(
@@ -82,6 +91,9 @@ Future<void> configureDependencies({
   );
   _registerFactoryIfAbsent<GetEntryDetails>(
     () => GetEntryDetails(serviceLocator()),
+  );
+  _registerFactoryIfAbsent<GetEntryTotalAmount>(
+    () => GetEntryTotalAmount(serviceLocator()),
   );
   _registerFactoryIfAbsent<MarkEntryDone>(
     () => MarkEntryDone(serviceLocator()),
@@ -91,15 +103,12 @@ Future<void> configureDependencies({
     () => RestoreDeletedEntry(serviceLocator()),
   );
 
-  if (!serviceLocator.isRegistered<AppAuthUiController>()) {
-    serviceLocator.registerLazySingleton<AppAuthUiController>(
-      () => AppAuthUiController(
-        watchAuthStatus: serviceLocator(),
-        logout: serviceLocator(),
-        deleteCurrentAccount: serviceLocator(),
-        deleteAllEntry: serviceLocator(),
-      ),
-      dispose: (controller) => controller.close(),
+  if (!serviceLocator.isRegistered<AppAuthGuardBloc>()) {
+    serviceLocator.registerLazySingleton<AppAuthGuardBloc>(
+      () =>
+          AppAuthGuardBloc(watchAuthStatus: serviceLocator())
+            ..add(const AppAuthGuardStarted()),
+      dispose: (bloc) => bloc.close(),
     );
   }
   if (!serviceLocator.isRegistered<AppThemeCubit>()) {
@@ -108,23 +117,33 @@ Future<void> configureDependencies({
       dispose: (cubit) => cubit.close(),
     );
   }
-  _registerFactoryIfAbsent<AuthBloc>(
-    () => AuthBloc(
-      watchAuthStatus: serviceLocator(),
-      getAccounts: serviceLocator(),
-      isAccountNameAvailable: serviceLocator(),
-      createAccount: serviceLocator(),
-      unlockAccount: serviceLocator(),
-      logout: serviceLocator(),
-    ),
-  );
+
+  if (!serviceLocator.isRegistered<DashboardBloc>()) {
+    serviceLocator.registerFactoryParam<DashboardBloc, String, void>(
+      (accountName, _) => DashboardBloc(
+        accountName: accountName,
+        logout: serviceLocator(),
+        deleteCurrentAccount: serviceLocator(),
+        deleteAllEntry: serviceLocator(),
+        getEntryTotalAmount: serviceLocator(),
+      ),
+    );
+  }
+  if (!serviceLocator.isRegistered<CategoryChooseBloc>()) {
+    serviceLocator.registerFactory<CategoryChooseBloc>(
+      () =>
+          CategoryChooseBloc(getEntryCategories: serviceLocator())
+            ..add(const CategoryChooseStarted()),
+    );
+  }
+
   if (!serviceLocator.isRegistered<EntryFeedBloc>()) {
     serviceLocator.registerFactoryParam<EntryFeedBloc, String, void>(
       (accountName, _) => EntryFeedBloc(
         accountName: accountName,
         getEntries: serviceLocator(),
-        getEntryCategories: serviceLocator(),
         getEntryDetails: serviceLocator(),
+        getEntryTotalAmount: serviceLocator(),
         deleteEntry: serviceLocator(),
         restoreDeletedEntry: serviceLocator(),
       )..add(const EntryFeedStarted()),
@@ -136,7 +155,7 @@ Future<void> configureDependencies({
           (params, _) => EntryFormBloc(
             params: params,
             getEntryCategories: serviceLocator(),
-            getEntries: serviceLocator(),
+            getEntryTotalAmount: serviceLocator(),
             getEntryDetails: serviceLocator(),
             addNewEntry: serviceLocator(),
             updateEntry: serviceLocator(),

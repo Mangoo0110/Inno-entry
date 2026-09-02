@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:inno_entry/src/core/di/service_locator.dart';
+import 'package:inno_entry/src/feature/category/domain/usecases/category_usecases.dart';
+import 'package:inno_entry/src/feature/entry/domain/usecases/entry_usecases.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_form_bloc.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_form/entry_form_view.dart';
 import 'package:path_provider/path_provider.dart';
@@ -50,13 +51,18 @@ class _EntryFormScreenState extends State<EntryFormScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => serviceLocator<EntryFormBloc>(
-        param1: EntryFormBlocParams(
+      create: (context) => EntryFormBloc(
+        params: EntryFormBlocParams(
           accountName: widget.accountName,
           mode: widget.mode,
           entryId: widget.entryId,
         ),
-      ),
+        getEntryCategories: context.read<GetEntryCategories>(),
+        getEntryTotalAmount: context.read<GetEntryTotalAmount>(),
+        getEntryDetails: context.read<GetEntryDetails>(),
+        addNewEntry: context.read<AddNewEntry>(),
+        updateEntry: context.read<UpdateEntry>(),
+      )..add(const EntryFormStarted()),
       child: BlocConsumer<EntryFormBloc, EntryFormState>(
         listenWhen: _shouldListen,
         listener: _onStateChanged,

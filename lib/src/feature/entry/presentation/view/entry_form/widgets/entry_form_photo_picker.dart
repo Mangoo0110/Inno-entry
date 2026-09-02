@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
+import 'package:inno_entry/src/feature/entry/presentation/widgets/photo_placeholder.dart';
 
 class EntryFormPhotoPicker extends StatelessWidget {
   const EntryFormPhotoPicker({
@@ -83,22 +84,12 @@ class _EntryUploadedPhotoPreview extends StatelessWidget {
       child: SizedBox.square(
         dimension: 56,
         child: path == null || !_isRealFilePath(path)
-            ? CustomPaint(
-                painter: _EntryPhotoPlaceholderPainter(
-                  backgroundColor: colors.tileColor,
-                  stripeColor: colors.backgroundColor.withAlpha(100),
-                ),
-              )
+            ? PhotoPlaceholder(colors: colors, gap: 10)
             : Image.file(
                 File(path),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) {
-                  return CustomPaint(
-                    painter: _EntryPhotoPlaceholderPainter(
-                      backgroundColor: colors.tileColor,
-                      stripeColor: colors.backgroundColor.withAlpha(100),
-                    ),
-                  );
+                  return PhotoPlaceholder(colors: colors);
                 },
               ),
       ),
@@ -109,39 +100,5 @@ class _EntryUploadedPhotoPreview extends StatelessWidget {
     return path.contains(Platform.pathSeparator) ||
         path.startsWith('/') ||
         path.startsWith('file:');
-  }
-}
-
-class _EntryPhotoPlaceholderPainter extends CustomPainter {
-  const _EntryPhotoPlaceholderPainter({
-    required this.backgroundColor,
-    required this.stripeColor,
-  });
-
-  final Color backgroundColor;
-  final Color stripeColor;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = backgroundColor);
-
-    final paint = Paint()
-      ..color = stripeColor
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke;
-
-    for (var x = -size.height; x < size.width; x += 13) {
-      canvas.drawLine(
-        Offset(x, size.height),
-        Offset(x + size.height, 0),
-        paint,
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _EntryPhotoPlaceholderPainter oldDelegate) {
-    return oldDelegate.backgroundColor != backgroundColor ||
-        oldDelegate.stripeColor != stripeColor;
   }
 }

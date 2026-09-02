@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
 import 'package:inno_entry/src/feature/category/domain/entities/entry_category.dart';
+import 'package:inno_entry/src/feature/category/presentation/widgets/category_chip_row.dart';
 import 'package:inno_entry/src/feature/entry/domain/entities/entry_brief.dart';
-import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_category_chip_row.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_empty_feed.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_feed_list.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_home_header.dart';
 import 'package:inno_entry/src/feature/entry/presentation/view/entry_dashboard/widgets/entry_search_field.dart';
 
+/// Preview purpose only
 class EntryFeedView extends StatelessWidget {
   const EntryFeedView({
     super.key,
     required this.accountName,
     required this.monthAmount,
     required this.syncLabel,
-    required this.categories,
+    required this.categoriesFuture,
     required this.selectedCategory,
     required this.entries,
     required this.onCategorySelected,
@@ -34,10 +35,10 @@ class EntryFeedView extends StatelessWidget {
   final String accountName;
   final double monthAmount;
   final String syncLabel;
-  final List<EntryCategory> categories;
-  final String selectedCategory;
+  final Future<List<EntryCategory>> categoriesFuture;
+  final String? selectedCategory;
   final List<EntryBrief> entries;
-  final ValueChanged<EntryCategory> onCategorySelected;
+  final ValueChanged<String?> onCategorySelected;
   final ScrollController? scrollController;
   final bool isPageLoading;
   final bool hasReachedMax;
@@ -76,10 +77,10 @@ class EntryFeedView extends StatelessWidget {
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 10)),
             SliverToBoxAdapter(
-              child: EntryCategoryChipRow(
-                categories: categories,
+              child: _EntryCategoryFutureRow(
+                categoriesFuture: categoriesFuture,
                 selectedCategory: selectedCategory,
-                onSelected: onCategorySelected,
+                onCategorySelected: onCategorySelected,
               ),
             ),
             if (entries.isEmpty)
@@ -104,6 +105,35 @@ class EntryFeedView extends StatelessWidget {
             child: _EntryAddButton(onPressed: onAddEntry!),
           ),
       ],
+    );
+  }
+}
+
+class _EntryCategoryFutureRow extends StatelessWidget {
+  const _EntryCategoryFutureRow({
+    required this.categoriesFuture,
+    required this.selectedCategory,
+    required this.onCategorySelected,
+  });
+
+  final Future<List<EntryCategory>> categoriesFuture;
+  final String? selectedCategory;
+  final ValueChanged<String?> onCategorySelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<EntryCategory>>(
+      future: categoriesFuture,
+      builder: (context, snapshot) {
+        final categories = snapshot.data ?? const <EntryCategory>[];
+        if (categories.isEmpty) return const SizedBox(height: 36);
+
+        return CategoryChipRow(
+          categories: categories,
+          selectedCategory: selectedCategory,
+          onSelectCategory: onCategorySelected,
+        );
+      },
     );
   }
 }

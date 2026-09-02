@@ -22,7 +22,7 @@ class DebouncerButton extends StatefulWidget {
 }
 
 class _DebouncerButtonState extends State<DebouncerButton> {
-  final Debouncer _debouncer = Debouncer(milliseconds: 500);
+  final Debouncer _debouncer = Debouncer(inMilliseconds: 500);
 
   Future<void> _handleTap() async {
     _debouncer.run(() async {

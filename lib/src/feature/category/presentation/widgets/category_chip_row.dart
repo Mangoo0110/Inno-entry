@@ -2,18 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
 import 'package:inno_entry/src/feature/category/domain/entities/entry_category.dart';
 
-class EntryCategoryChipRow extends StatelessWidget {
-  const EntryCategoryChipRow({
+class CategoryChipRow extends StatelessWidget {
+  const CategoryChipRow({
     super.key,
     required this.categories,
     required this.selectedCategory,
-    required this.onSelected,
+    required this.onSelectCategory,
     this.height = 36,
   });
 
   final List<EntryCategory> categories;
-  final String selectedCategory;
-  final ValueChanged<EntryCategory> onSelected;
+  final String? selectedCategory;
+  final ValueChanged<String?> onSelectCategory;
   final double height;
 
   @override
@@ -30,25 +30,28 @@ class EntryCategoryChipRow extends StatelessWidget {
         separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final category = categories[index];
-          final isSelected = _isSameCategory(category.name, selectedCategory);
+          final categoryFilter = _filterValueFor(category.name);
+          final isSelected = categoryFilter == selectedCategory;
 
-          return _EntryCategoryChip(
+          return _CategoryChip(
             label: category.name,
             isSelected: isSelected,
-            onTap: () => onSelected(category),
+            onTap: () => onSelectCategory(categoryFilter),
           );
         },
       ),
     );
   }
 
-  bool _isSameCategory(String left, String right) {
-    return left.trim().toLowerCase() == right.trim().toLowerCase();
+  String? _filterValueFor(String category) {
+    final value = category.trim();
+    if (value.toLowerCase() == 'all') return null;
+    return value;
   }
 }
 
-class _EntryCategoryChip extends StatelessWidget {
-  const _EntryCategoryChip({
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -61,11 +64,12 @@ class _EntryCategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.context(context);
+    final isDark = Theme.brightnessOf(context) == Brightness.dark;
+    final selectedColor = isDark ? colors.primaryColor : colors.textColor;
+    final unselectedColor = isDark ? colors.grey : colors.textColor;
     final textStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-      color: isSelected ? 
-        (Theme.brightnessOf(context) == Brightness.dark ? colors.primaryColor : colors.textColor)
-        : (Theme.brightnessOf(context) == Brightness.dark ? colors.grey : colors.textColor),
+      color: isSelected ? selectedColor : unselectedColor,
       height: 1,
       overflow: TextOverflow.visible,
     );
@@ -87,10 +91,12 @@ class _EntryCategoryChip extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              spacing: 4,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                if(isSelected) Icon(Icons.done, size: 16, color: Theme.brightnessOf(context) == Brightness.dark ? colors.primaryColor: colors.textColor,),
+                if (isSelected) ...[
+                  Icon(Icons.done, size: 16, color: selectedColor),
+                  const SizedBox(width: 4),
+                ],
                 Text(label, style: textStyle),
               ],
             ),
