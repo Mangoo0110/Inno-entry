@@ -9,7 +9,6 @@ class EntryFeedList extends StatelessWidget {
     required this.entries,
     this.isPageLoading = false,
     this.hasReachedMax = false,
-    this.onLoadMore,
     this.onEntryPressed,
     this.onDeleteEntry,
   });
@@ -17,14 +16,13 @@ class EntryFeedList extends StatelessWidget {
   final List<EntryBrief> entries;
   final bool isPageLoading;
   final bool hasReachedMax;
-  final VoidCallback? onLoadMore;
   final ValueChanged<EntryBrief>? onEntryPressed;
   final ValueChanged<EntryBrief>? onDeleteEntry;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.context(context);
-    final hasFooter = isPageLoading || hasReachedMax || onLoadMore != null;
+    final hasFooter = isPageLoading || hasReachedMax;
     final childCount = entries.isEmpty
         ? 0
         : entries.length + (hasFooter ? 1 : 0);
@@ -38,7 +36,6 @@ class EntryFeedList extends StatelessWidget {
             return _EntryFeedFooter(
               isPageLoading: isPageLoading,
               hasReachedMax: hasReachedMax,
-              onLoadMore: onLoadMore,
             );
           }
 
@@ -47,19 +44,20 @@ class EntryFeedList extends StatelessWidget {
             children: [
               EntryFeedTile(
                 entry: entry,
-                onTap: onEntryPressed == null ? null : () => onEntryPressed!(entry),
+                onTap: onEntryPressed == null
+                    ? null
+                    : () => onEntryPressed!(entry),
                 onDelete: onDeleteEntry == null
                     ? null
                     : () => onDeleteEntry!(entry),
               ),
-              if (index != entries.length - 1) 
-                 Divider(
+              if (index != entries.length - 1)
+                Divider(
                   height: 1,
                   indent: 16,
                   endIndent: 16,
                   color: colors.dividerColor,
-                )
-              
+                ),
             ],
           );
         },
@@ -72,12 +70,10 @@ class _EntryFeedFooter extends StatelessWidget {
   const _EntryFeedFooter({
     required this.isPageLoading,
     required this.hasReachedMax,
-    this.onLoadMore,
   });
 
   final bool isPageLoading;
   final bool hasReachedMax;
-  final VoidCallback? onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -104,10 +100,6 @@ class _EntryFeedFooter extends StatelessWidget {
       );
     }
 
-    onLoadMore?.call();
-    return const Padding(
-      padding: EdgeInsets.symmetric(vertical: 18),
-      child: Center(child: CircularProgressIndicator()),
-    );
+    return const SizedBox.shrink();
   }
 }

@@ -1,5 +1,32 @@
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+
+class StripeCoordinates {
+  final Offset top;
+  final Offset bottom;
+
+  StripeCoordinates({required this.top, required this.bottom});
+
+  @override
+  bool operator ==(Object other) {
+    return other is StripeCoordinates &&
+      top == other.top &&
+      bottom == other.bottom;
+  }
+
+  @override
+  int get hashCode => top.hashCode ^ bottom.hashCode;
+
+  @override
+  String toString() {
+    return ''' 
+    top: $top,
+    bottom: $bottom \n
+    ''';
+  }
+}
 
 /// Rectangle stripe painter
 /// 
@@ -8,31 +35,47 @@ class RectangleStripePainter extends CustomPainter {
   final Color backGroundColor;
   final Color stripeColor;
   final double gap;
+  final double stripeWidth;
 
-  RectangleStripePainter({super.repaint, required this.stripeColor, required this.backGroundColor, required this.gap});
+  RectangleStripePainter({super.repaint, required this.stripeColor, this.stripeWidth = 5, required this.backGroundColor, required this.gap});
 
   @override
   void paint(Canvas canvas, Size size) {
     // Draw the rectangle first
     canvas.drawRect(Offset.zero & size, Paint()..color = backGroundColor);
 
-    final maxX = size.width; final maxY = size.height;
-    Offset top = Offset(maxX, maxY); // bottom right
-    Offset bottom = Offset(maxX, maxY); // bottom right
-
     Paint paint = Paint()
-      ..strokeWidth = 5
+      ..strokeWidth = stripeWidth
+      //..strokeCap = StrokeCap.round
       ..color = stripeColor;
-
     
-    while(top.dy + gap >= 0 && top.dx + gap >= 0) {
-      // Paint
-      canvas.drawLine(top, bottom, paint);
-      // Calculate next positions
-      top = Offset(top.dx - (top.dy <= 0 ? gap : 0.0), top.dy - (top.dy >= 0 ? gap : 0.0));
-      bottom = Offset(bottom.dx - (bottom.dx >= 0 ? gap : 0), bottom.dy - (bottom.dx <= 0 ? gap : 0));
+    List<StripeCoordinates> coordinates = stripes(size: size, gap: gap);
+    for(final coordinate in coordinates) {
+      canvas.drawLine(coordinate.top, coordinate.bottom, paint);
     }
 
+  }
+
+
+
+  static List<StripeCoordinates> stripes({required Size size, required double gap}) {
+    List<StripeCoordinates> coordinates = [];
+    size = Size(size.width + gap, size.height + gap);
+
+    Offset top = Offset(size.width, size.height); // bottom right
+    Offset bottom = Offset(size.width, size.height); // bottom right
+ 
+    debugPrint("mmm");
+    int totalStripes = (max(size.height, size.width) / gap).ceil() * 2 ;
+    while(totalStripes >= 0) {
+      // Calculate positions
+      top = Offset(top.dx - (top.dy < - bottom.dy % gap ? gap : 0.0),  top.dy - (top.dy >= - bottom.dy % gap ? gap : 0.0));
+      bottom = Offset(bottom.dx - ((bottom.dx >=  -bottom.dx % gap) ? gap : 0),  bottom.dy - (bottom.dx <  -bottom.dx % gap ? gap : 0));
+      coordinates.add(StripeCoordinates(top: top, bottom: bottom));
+      totalStripes--;
+    }
+
+    return coordinates;
   }
 
   @override

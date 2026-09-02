@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inno_entry/src/core/routing/app_routes.dart';
+import 'package:inno_entry/src/app/routing/app_routes.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
 import 'package:inno_entry/src/feature/entry/domain/usecases/entry_usecases.dart';
 import 'package:inno_entry/src/feature/entry/presentation/bloc/entry_detail_bloc.dart';
