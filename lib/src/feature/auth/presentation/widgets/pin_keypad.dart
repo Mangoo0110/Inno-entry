@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inno_entry/src/core/theme/app_colors.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_bloc.dart';
 
 class PinKeypad extends StatelessWidget {
-  const PinKeypad({super.key, required this.isLocked});
+  const PinKeypad({
+    super.key,
+    required this.isLocked,
+    required this.onDigitPressed,
+  });
 
   final bool isLocked;
+  final ValueChanged<String> onDigitPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -35,17 +38,13 @@ class PinKeypad extends StatelessWidget {
                   width: keyWidth,
                   height: keyHeight,
                   isLocked: isLocked,
-                  onTap: () => _handleTap(context, key),
+                  onTap: () => onDigitPressed(key),
                 ),
             ],
           ),
         );
       },
     );
-  }
-
-  void _handleTap(BuildContext context, String value) {
-    context.read<AuthBloc>().add(AuthPinDigitPressed(value));
   }
 }
 

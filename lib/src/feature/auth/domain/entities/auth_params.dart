@@ -1,4 +1,6 @@
-abstract class AuthParams {
-  String get accountName;
-  String get pin;
+ class AuthParams {
+  final String accountName;
+  final String pin;
+
+  AuthParams({required this.accountName, required this.pin});
 }

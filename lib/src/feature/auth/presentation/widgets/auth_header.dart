@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inno_entry/src/feature/auth/presentation/bloc/auth_bloc.dart';
 
 class AuthHeader extends StatelessWidget {
-  const AuthHeader({super.key, required this.title});
+  const AuthHeader({super.key, required this.title, this.onBackPressed});
 
   final String title;
+  final VoidCallback? onBackPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -15,9 +14,7 @@ class AuthHeader extends StatelessWidget {
         children: [
           IconButton(
             tooltip: 'Back',
-            onPressed: () {
-              context.read<AuthBloc>().add(const AuthBackPressed());
-            },
+            onPressed: onBackPressed,
             icon: const Icon(Icons.arrow_back_rounded),
           ),
           Expanded(
